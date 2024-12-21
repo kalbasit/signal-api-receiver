@@ -19,6 +19,10 @@ type mockClient struct {
 	msgs []receiver.Message
 }
 
+func (mc *mockClient) ReceiveLoop() error {
+	return nil
+}
+
 func (mc *mockClient) Pop() *receiver.Message {
 	if len(mc.msgs) == 0 {
 		return nil

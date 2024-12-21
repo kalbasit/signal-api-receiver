@@ -110,7 +110,7 @@ func New(uri *url.URL) (*Client, error) {
 // ReceiveLoop is a blocking call and it loop over receiving messages over the
 // websocket and record them internally to be consumed by either Pop() or
 // Flush().
-func (c *Client) ReceiveLoop() {
+func (c *Client) ReceiveLoop() error {
 	log.Print("Starting the receive loop from Signal API")
 
 	for {
@@ -118,7 +118,7 @@ func (c *Client) ReceiveLoop() {
 		if err != nil {
 			log.Printf("error returned by the websocket: %s", err)
 
-			return
+			return err
 		}
 
 		c.recordMessage(msg)

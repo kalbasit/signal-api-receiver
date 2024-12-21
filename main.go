@@ -60,8 +60,6 @@ func realMain() int {
 		return 1
 	}
 
-	go sarc.ReceiveLoop()
-
 	srv := server.New(sarc)
 
 	server := &http.Server{

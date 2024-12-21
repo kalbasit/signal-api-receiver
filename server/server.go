@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/kalbasit/signal-api-receiver/receiver"
@@ -19,13 +20,25 @@ type Server struct {
 }
 
 type client interface {
+	ReceiveLoop() error
 	Pop() *receiver.Message
 	Flush() []receiver.Message
 }
 
 // New returns a new Server.
 func New(sarc client) *Server {
-	return &Server{sarc: sarc}
+	s := &Server{sarc: sarc}
+	go s.start()
+
+	return s
+}
+
+func (s *Server) start() {
+	for {
+		if err := s.sarc.ReceiveLoop(); err != nil {
+			log.Printf("Error in the receive loop: %v", err)
+		}
+	}
 }
 
 // ServeHTTP implements the http.Handler interface
