@@ -24,6 +24,7 @@
               ../../go.mod
               ../../go.sum
               ../../main.go
+              ../../pkg
               ../../receiver
               ../../server
             ];
