@@ -27,7 +27,7 @@
 
           subPackages = [ "." ];
 
-          vendorHash = "sha256-ZWlUjQXnIk5aamIJ6cZxE8Vysx3hNJ5zeOiptvbSD0M=";
+          vendorHash = "sha256-XlJn0fnFdi9UqJMQHcPPmivHXBbSEMb2trI3MXfyyZ4=";
 
           doCheck = true;
 
