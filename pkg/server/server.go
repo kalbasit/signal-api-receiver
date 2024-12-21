@@ -10,7 +10,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/kalbasit/signal-api-receiver/receiver"
+	"github.com/kalbasit/signal-api-receiver/pkg/receiver"
 )
 
 const usage = `

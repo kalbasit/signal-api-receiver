@@ -13,8 +13,8 @@ import (
 	"github.com/urfave/cli/v3"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/kalbasit/signal-api-receiver/receiver"
-	"github.com/kalbasit/signal-api-receiver/server"
+	"github.com/kalbasit/signal-api-receiver/pkg/receiver"
+	"github.com/kalbasit/signal-api-receiver/pkg/server"
 )
 
 var (
