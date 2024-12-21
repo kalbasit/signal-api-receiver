@@ -16,16 +16,16 @@
 
           src = lib.fileset.toSource {
             fileset = lib.fileset.unions [
-              ../../cmd
               ../../go.mod
               ../../go.sum
+              ../../main.go
               ../../receiver
               ../../server
             ];
             root = ../..;
           };
 
-          subPackages = [ "./cmd/signal-api-receiver" ];
+          subPackages = [ "." ];
 
           vendorHash = "sha256-0Qxw+MUYVgzgWB8vi3HBYtVXSq/btfh4ZfV/m1chNrA=";
 
