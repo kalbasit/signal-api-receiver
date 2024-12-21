@@ -81,3 +81,10 @@ type Attachment struct {
 	Caption         *string `json:"caption"`
 	UploadTimestamp *int64  `json:"uploadTimestamp"`
 }
+
+func (m *Message) IsDataMessage() bool {
+	return m.Envelope.DataMessage != nil &&
+		m.Envelope.ReceiptMessage == nil &&
+		m.Envelope.TypingMessage == nil &&
+		m.Envelope.SyncMessage == nil
+}

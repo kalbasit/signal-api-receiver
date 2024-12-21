@@ -108,7 +108,7 @@ func (c *Client) recordMessage(msg []byte) {
 	}
 
 	// Do not record receipt, typing, group update or sync messages, etc.
-	if m.Envelope.DataMessage == nil || m.Envelope.DataMessage.Message == nil {
+	if !m.IsDataMessage() {
 		//nolint:zerologlint
 		if c.logger.Debug().Enabled() {
 			c.logger.
