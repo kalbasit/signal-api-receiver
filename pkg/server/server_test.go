@@ -299,7 +299,7 @@ func TestServeHTTP(t *testing.T) {
 				resp, err := http.DefaultClient.Do(r)
 				require.NoError(t, err)
 
-				assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+				assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 			})
 
 			t.Run(verb+" /receive/flush", func(t *testing.T) {
@@ -318,7 +318,7 @@ func TestServeHTTP(t *testing.T) {
 				resp, err := http.DefaultClient.Do(r)
 				require.NoError(t, err)
 
-				assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+				assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 			})
 
 			t.Run(verb+" /receive/pop", func(t *testing.T) {
@@ -337,7 +337,7 @@ func TestServeHTTP(t *testing.T) {
 				resp, err := http.DefaultClient.Do(r)
 				require.NoError(t, err)
 
-				assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+				assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 			})
 		}
 	})

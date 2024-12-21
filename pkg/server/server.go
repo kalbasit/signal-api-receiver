@@ -3,24 +3,31 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync/atomic"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog"
 
 	"github.com/kalbasit/signal-api-receiver/pkg/receiver"
 )
 
-const usage = `
-GET /receive/pop   => Return the oldest message
-GET /receive/flush => Return all messages
-`
+const (
+	routeReceiveFlush = "/receive/flush"
+	routeReceivePop   = "/receive/pop"
+
+	contentType     = "Content-Type"
+	contentTypeJSON = "application/json"
+)
 
 // Server represent the HTTP server that exposes the pop/flush routes.
 type Server struct {
-	logger     zerolog.Logger
+	logger zerolog.Logger
+
+	router *chi.Mux
+
 	sarc       client
 	repeatLast bool
 	last       atomic.Pointer[receiver.Message]
@@ -41,10 +48,15 @@ func New(ctx context.Context, sarc client, repeatLastMessage bool) *Server {
 		repeatLast: repeatLastMessage,
 	}
 
+	s.createRouter()
+
 	go s.start()
 
 	return s
 }
+
+// ServeHTTP implements http.Handler and turns the Server type into a handler.
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) { s.router.ServeHTTP(w, r) }
 
 func (s *Server) start() {
 	log := s.logger.With().Str("func", "start").Logger()
@@ -63,52 +75,20 @@ func (s *Server) start() {
 	}
 }
 
-// ServeHTTP implements the http.Handler interface
-//
-// /receive/pop
-//
-//	This returns status 200 and a receiver.Message or status 204 with no body
-//
-// /receive/flush
-//
-//	This returns status 200 and a list of receiver.Message
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "GET is the only allowed verb", http.StatusForbidden)
+func (s *Server) createRouter() {
+	s.router = chi.NewRouter()
 
-		return
-	}
+	s.router.Use(middleware.Heartbeat("/healthz"))
+	s.router.Use(middleware.RequestID)
+	s.router.Use(middleware.RealIP)
+	s.router.Use(requestLogger(s.logger))
+	s.router.Use(middleware.Recoverer)
 
-	if r.URL.Path == "/healthz" {
-		w.WriteHeader(http.StatusNoContent)
-
-		return
-	}
-
-	if r.URL.Path == "/receive/pop" {
-		s.receivePop(w)
-
-		return
-	}
-
-	if r.URL.Path == "/receive/flush" {
-		s.receiveFlush(w)
-
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusNotFound)
-
-	notFoundMessage := []byte(fmt.Sprintf(
-		"ERROR! GET %s is not supported. The supported paths are below:", r.URL.Path) + usage)
-
-	if _, err := w.Write(notFoundMessage); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	s.router.Get(routeReceiveFlush, s.receiveFlush)
+	s.router.Get(routeReceivePop, s.receivePop)
 }
 
-func (s *Server) receivePop(w http.ResponseWriter) {
+func (s *Server) receivePop(w http.ResponseWriter, _ *http.Request) {
 	msg := s.sarc.Pop()
 	if s.repeatLast {
 		if msg == nil {
@@ -124,22 +104,57 @@ func (s *Server) receivePop(w http.ResponseWriter) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentType, contentTypeJSON)
 
 	if err := json.NewEncoder(w).Encode(msg); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func (s *Server) receiveFlush(w http.ResponseWriter) {
+func (s *Server) receiveFlush(w http.ResponseWriter, _ *http.Request) {
 	msgs := s.sarc.Flush()
 	if s.repeatLast && len(msgs) > 0 {
 		s.last.Store(&msgs[len(msgs)-1])
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentType, contentTypeJSON)
 
 	if err := json.NewEncoder(w).Encode(msgs); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func requestLogger(logger zerolog.Logger) func(handler http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			startedAt := time.Now()
+			reqID := middleware.GetReqID(r.Context())
+
+			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+
+			defer func() {
+				log := logger.With().
+					Str("method", r.Method).
+					Str("request-uri", r.RequestURI).
+					Int("status", ww.Status()).
+					Dur("elapsed", time.Since(startedAt)).
+					Str("from", r.RemoteAddr).
+					Str("reqID", reqID).
+					Logger()
+
+				switch r.Method {
+				case http.MethodHead, http.MethodGet:
+					log = log.With().Int("bytes", ww.BytesWritten()).Logger()
+				case http.MethodPost, http.MethodPut, http.MethodPatch:
+					log = log.With().Int64("bytes", r.ContentLength).Logger()
+				}
+
+				log.Info().Msg("handled request")
+			}()
+
+			next.ServeHTTP(ww, r)
+		}
+
+		return http.HandlerFunc(fn)
 	}
 }
