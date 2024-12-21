@@ -1,12 +1,14 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sync/atomic"
 	"time"
+
+	"github.com/rs/zerolog"
 
 	"github.com/kalbasit/signal-api-receiver/receiver"
 )
@@ -18,6 +20,7 @@ GET /receive/flush => Return all messages
 
 // Server represent the HTTP server that exposes the pop/flush routes.
 type Server struct {
+	logger     zerolog.Logger
 	sarc       client
 	repeatLast bool
 	last       atomic.Pointer[receiver.Message]
@@ -31,21 +34,28 @@ type client interface {
 }
 
 // New returns a new Server.
-func New(sarc client, repeatLastMessage bool) *Server {
-	s := &Server{sarc: sarc, repeatLast: repeatLastMessage}
+func New(ctx context.Context, sarc client, repeatLastMessage bool) *Server {
+	s := &Server{
+		logger:     *zerolog.Ctx(ctx),
+		sarc:       sarc,
+		repeatLast: repeatLastMessage,
+	}
+
 	go s.start()
 
 	return s
 }
 
 func (s *Server) start() {
+	log := s.logger.With().Str("func", "start").Logger()
+
 	for {
 		if err := s.sarc.ReceiveLoop(); err != nil {
-			log.Printf("Error in the receive loop: %v", err)
+			log.Error().Err(err).Msg("error in the receive loop")
 		}
 	Reconnect:
 		if err := s.sarc.Connect(); err != nil {
-			log.Printf("Error reconnecting: %v", err)
+			log.Error().Err(err).Msg("Error reconnecting: %v")
 			time.Sleep(time.Second)
 
 			goto Reconnect

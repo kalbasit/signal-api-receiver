@@ -1,14 +1,15 @@
 package receiver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog"
 )
 
 // Message defines the message structure received from the Signal API.
@@ -89,6 +90,8 @@ type Client struct {
 	uri  *url.URL
 	conn *websocket.Conn
 
+	logger zerolog.Logger
+
 	mu       sync.Mutex
 	messages []Message
 }
@@ -96,8 +99,8 @@ type Client struct {
 // New creates a new Signal API client and returns it.
 // An error is returned if a websocket fails to open with the Signal's API
 // /v1/receive.
-func New(uri *url.URL) (*Client, error) {
-	c := &Client{uri: uri}
+func New(ctx context.Context, uri *url.URL) (*Client, error) {
+	c := &Client{uri: uri, logger: *zerolog.Ctx(ctx)}
 
 	return c, c.Connect()
 }
@@ -108,7 +111,7 @@ func (c *Client) Connect() error {
 		c.conn = nil
 	}
 
-	log.Print("Connecting to the Signal API")
+	c.logger.Info().Msg("Connecting to the Signal API")
 
 	conn, _, err := websocket.DefaultDialer.Dial(c.uri.String(), http.Header{})
 	if err != nil {
@@ -124,12 +127,14 @@ func (c *Client) Connect() error {
 // websocket and record them internally to be consumed by either Pop() or
 // Flush().
 func (c *Client) ReceiveLoop() error {
-	log.Print("Starting the receive loop from Signal API")
+	log := c.logger.With().Str("func", "ReceiveLoop").Logger()
+
+	log.Info().Msg("Starting the receive loop from Signal API")
 
 	for {
 		_, msg, err := c.conn.ReadMessage()
 		if err != nil {
-			log.Printf("error returned by the websocket: %s", err)
+			log.Error().Err(err).Msg("error returned by the websocket")
 
 			return err
 		}
@@ -166,15 +171,21 @@ func (c *Client) Pop() *Message {
 func (c *Client) recordMessage(msg []byte) {
 	var m Message
 	if err := json.Unmarshal(msg, &m); err != nil {
-		log.Printf("Error decoding the message below: %s", err)
-		log.Print(string(msg[:]))
+		c.logger.
+			Error().
+			Err(err).
+			Str("message", string(msg)).
+			Msg("error decoding the message")
 
 		return
 	}
 
 	// Do not record receipt, typing, group update or sync messages, etc.
 	if m.Envelope.DataMessage == nil || m.Envelope.DataMessage.Message == nil {
-		log.Printf("Ignoring non-data message: %s", string(msg))
+		c.logger.
+			Info().
+			Str("message", string(msg)).
+			Msg("ignoring non-data message")
 
 		return
 	}
@@ -183,5 +194,8 @@ func (c *Client) recordMessage(msg []byte) {
 	c.messages = append(c.messages, m)
 	c.mu.Unlock()
 
-	log.Printf("The following message was successfully recorded: %s", string(msg))
+	c.logger.
+		Info().
+		Str("message", string(msg)).
+		Msg("a signal message was successfully recorded")
 }

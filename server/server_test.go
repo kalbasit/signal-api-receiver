@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -58,7 +59,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc, false)
+			s := server.New(newContext(), mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -77,7 +78,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc, false)
+			s := server.New(newContext(), mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -108,7 +109,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc, false)
+			s := server.New(newContext(), mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -149,7 +150,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc, true)
+			s := server.New(newContext(), mc, true)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -186,7 +187,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc, false)
+			s := server.New(newContext(), mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -216,7 +217,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc, false)
+			s := server.New(newContext(), mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -247,7 +248,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc, false)
+			s := server.New(newContext(), mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -287,7 +288,7 @@ func TestServeHTTP(t *testing.T) {
 
 				mc := &mockClient{msgs: []receiver.Message{}}
 
-				s := server.New(mc, false)
+				s := server.New(newContext(), mc, false)
 
 				hs := httptest.NewServer(s)
 				defer hs.Close()
@@ -306,7 +307,7 @@ func TestServeHTTP(t *testing.T) {
 
 				mc := &mockClient{msgs: []receiver.Message{}}
 
-				s := server.New(mc, false)
+				s := server.New(newContext(), mc, false)
 
 				hs := httptest.NewServer(s)
 				defer hs.Close()
@@ -325,7 +326,7 @@ func TestServeHTTP(t *testing.T) {
 
 				mc := &mockClient{msgs: []receiver.Message{}}
 
-				s := server.New(mc, false)
+				s := server.New(newContext(), mc, false)
 
 				hs := httptest.NewServer(s)
 				defer hs.Close()
@@ -340,4 +341,10 @@ func TestServeHTTP(t *testing.T) {
 			})
 		}
 	})
+}
+
+func newContext() context.Context {
+	return zerolog.
+		New(io.Discard).
+		WithContext(context.Background())
 }
