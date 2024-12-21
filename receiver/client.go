@@ -86,7 +86,8 @@ type Attachment struct {
 
 // Client represents the Signal API client, and is returned by the New() function.
 type Client struct {
-	*websocket.Conn
+	uri  *url.URL
+	conn *websocket.Conn
 
 	mu       sync.Mutex
 	messages []Message
@@ -96,15 +97,27 @@ type Client struct {
 // An error is returned if a websocket fails to open with the Signal's API
 // /v1/receive.
 func New(uri *url.URL) (*Client, error) {
-	c, _, err := websocket.DefaultDialer.Dial(uri.String(), http.Header{})
-	if err != nil {
-		return nil, fmt.Errorf("error creating a new websocket connetion: %w", err)
+	c := &Client{uri: uri}
+
+	return c, c.Connect()
+}
+
+func (c *Client) Connect() error {
+	if c.conn != nil {
+		c.conn.Close()
+		c.conn = nil
 	}
 
-	return &Client{
-		Conn:     c,
-		messages: []Message{},
-	}, nil
+	log.Print("Connecting to the Signal API")
+
+	conn, _, err := websocket.DefaultDialer.Dial(c.uri.String(), http.Header{})
+	if err != nil {
+		return fmt.Errorf("error creating a new websocket connetion: %w", err)
+	}
+
+	c.conn = conn
+
+	return nil
 }
 
 // ReceiveLoop is a blocking call and it loop over receiving messages over the
@@ -114,7 +127,7 @@ func (c *Client) ReceiveLoop() error {
 	log.Print("Starting the receive loop from Signal API")
 
 	for {
-		_, msg, err := c.ReadMessage()
+		_, msg, err := c.conn.ReadMessage()
 		if err != nil {
 			log.Printf("error returned by the websocket: %s", err)
 
@@ -129,7 +142,7 @@ func (c *Client) ReceiveLoop() error {
 func (c *Client) Flush() []Message {
 	c.mu.Lock()
 	msgs := c.messages
-	c.messages = []Message{}
+	c.messages = nil
 	c.mu.Unlock()
 
 	return msgs
@@ -168,5 +181,5 @@ func (c *Client) recordMessage(msg []byte) {
 	c.messages = append(c.messages, m)
 	c.mu.Unlock()
 
-	log.Printf("the following message was successfully recorded: %s", string(msg[:]))
+	log.Printf("The following message was successfully recorded: %s", string(msg))
 }

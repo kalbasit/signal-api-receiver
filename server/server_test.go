@@ -19,6 +19,10 @@ type mockClient struct {
 	msgs []receiver.Message
 }
 
+func (mc *mockClient) Connect() error {
+	return nil
+}
+
 func (mc *mockClient) ReceiveLoop() error {
 	return nil
 }

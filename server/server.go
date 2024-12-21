@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/kalbasit/signal-api-receiver/receiver"
 )
@@ -20,6 +21,7 @@ type Server struct {
 }
 
 type client interface {
+	Connect() error
 	ReceiveLoop() error
 	Pop() *receiver.Message
 	Flush() []receiver.Message
@@ -37,6 +39,13 @@ func (s *Server) start() {
 	for {
 		if err := s.sarc.ReceiveLoop(); err != nil {
 			log.Printf("Error in the receive loop: %v", err)
+		}
+	Reconnect:
+		if err := s.sarc.Connect(); err != nil {
+			log.Printf("Error reconnecting: %v", err)
+			time.Sleep(time.Second)
+
+			goto Reconnect
 		}
 	}
 }
