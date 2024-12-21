@@ -111,9 +111,7 @@ func serveAction(logger zerolog.Logger) cli.ActionFunc {
 			return fmt.Errorf("error parsing the url %q: %w", signalAPIURL, err)
 		}
 
-		signalAccount := cmd.String("signal-account")
-
-		uri.Path = fmt.Sprintf("/v1/receive/%s", signalAccount)
+		uri = uri.JoinPath(fmt.Sprintf("/v1/receive/%s", cmd.String("signal-account")))
 
 		logger.Info().
 			Str("signal-api-url", uri.String()).
