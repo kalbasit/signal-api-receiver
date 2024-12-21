@@ -17,11 +17,16 @@ import (
 	"github.com/kalbasit/signal-api-receiver/server"
 )
 
-// https://regex101.com/r/sxO3RG/1
-var accountRegex = regexp.MustCompile(`^\+[0-9]+$`)
+var (
+	// ErrInvalidSignalAccount is retruned if the given signal-account is not valid.
+	ErrInvalidSignalAccount = errors.New("invalid signal account")
 
-// ErrInvalidSignalAccount is retruned if the given signal-account is not valid.
-var ErrInvalidSignalAccount = errors.New("invalid signal account")
+	// ErrSchemeMissing is returned if the given signal-api-url is missing a scheme.
+	ErrSchemeMissing = errors.New("scheme is missing")
+
+	// https://regex101.com/r/sxO3RG/1
+	accountRegex = regexp.MustCompile(`^\+[0-9]+$`)
+)
 
 func serveCommand(logger zerolog.Logger) *cli.Command {
 	return &cli.Command{
@@ -56,7 +61,18 @@ func serveCommand(logger zerolog.Logger) *cli.Command {
 				Usage:    "The URL of the Signal api including the scheme. e.g wss://signal-api.example.com",
 				Sources:  cli.EnvVars("SIGNAL_API_URL"),
 				Required: true,
-				// TODO: validator
+				Validator: func(u string) error {
+					uri, err := url.Parse(u)
+					if err != nil {
+						return err
+					}
+
+					if uri.Scheme == "" {
+						return ErrSchemeMissing
+					}
+
+					return nil
+				},
 			},
 			&cli.StringFlag{
 				Name:    "server-addr",
