@@ -19,15 +19,18 @@ func main() {
 
 func realMain() int {
 	var (
-		addr          string
-		signalAPIURL  string
-		signalAccount string
+		addr              string
+		signalAPIURL      string
+		signalAccount     string
+		repeatLastMessage bool
 	)
 
 	flag.StringVar(&addr, "addr", ":8105", "The address to listen and serve on")
 	flag.StringVar(&signalAPIURL, "signal-api-url", "",
 		"The URL of the Signal api including the scheme. e.g wss://signal-api.example.com")
 	flag.StringVar(&signalAccount, "signal-account", "", "The account number for signal")
+	flag.BoolVar(&repeatLastMessage, "repeat-last-message", false,
+		"Repeat the last message if there are no new messages (applies to /receive/pop)")
 
 	flag.Parse()
 
@@ -60,7 +63,7 @@ func realMain() int {
 		return 1
 	}
 
-	srv := server.New(sarc)
+	srv := server.New(sarc, repeatLastMessage)
 
 	server := &http.Server{
 		Addr:              addr,

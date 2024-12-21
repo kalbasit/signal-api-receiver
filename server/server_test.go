@@ -58,7 +58,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc)
+			s := server.New(mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -77,7 +77,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc)
+			s := server.New(mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -108,7 +108,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc)
+			s := server.New(mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -153,7 +153,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc)
+			s := server.New(mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -183,7 +183,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc)
+			s := server.New(mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -214,7 +214,7 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := server.New(mc)
+			s := server.New(mc, false)
 
 			hs := httptest.NewServer(s)
 			defer hs.Close()
@@ -254,7 +254,7 @@ func TestServeHTTP(t *testing.T) {
 
 				mc := &mockClient{msgs: []receiver.Message{}}
 
-				s := server.New(mc)
+				s := server.New(mc, false)
 
 				hs := httptest.NewServer(s)
 				defer hs.Close()
@@ -273,7 +273,7 @@ func TestServeHTTP(t *testing.T) {
 
 				mc := &mockClient{msgs: []receiver.Message{}}
 
-				s := server.New(mc)
+				s := server.New(mc, false)
 
 				hs := httptest.NewServer(s)
 				defer hs.Close()
@@ -292,7 +292,7 @@ func TestServeHTTP(t *testing.T) {
 
 				mc := &mockClient{msgs: []receiver.Message{}}
 
-				s := server.New(mc)
+				s := server.New(mc, false)
 
 				hs := httptest.NewServer(s)
 				defer hs.Close()
