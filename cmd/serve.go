@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -14,6 +16,12 @@ import (
 	"github.com/kalbasit/signal-api-receiver/receiver"
 	"github.com/kalbasit/signal-api-receiver/server"
 )
+
+// https://regex101.com/r/sxO3RG/1
+var accountRegex = regexp.MustCompile(`^\+[0-9]+$`)
+
+// ErrInvalidSignalAccount is retruned if the given signal-account is not valid.
+var ErrInvalidSignalAccount = errors.New("invalid signal account")
 
 func serveCommand(logger zerolog.Logger) *cli.Command {
 	return &cli.Command{
@@ -32,7 +40,16 @@ func serveCommand(logger zerolog.Logger) *cli.Command {
 				Usage:    "The account number for signal",
 				Sources:  cli.EnvVars("SIGNAL_ACCOUNT"),
 				Required: true,
-				// TODO: validator
+				Validator: func(a string) error {
+					if !accountRegex.MatchString(a) {
+						return fmt.Errorf(
+							"%w: phone number must have leading + followed only by numbers",
+							ErrInvalidSignalAccount,
+						)
+					}
+
+					return nil
+				},
 			},
 			&cli.StringFlag{
 				Name:     "signal-api-url",
