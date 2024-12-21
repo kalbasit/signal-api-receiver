@@ -8,7 +8,6 @@
       projectRootFile = ".git/config";
 
       settings.global.excludes = [
-        ".env"
         ".envrc"
         "LICENSE"
         "renovate.json"
