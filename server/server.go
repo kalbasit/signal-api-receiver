@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/kalbasit/signal-api-receiver/receiver"
@@ -40,13 +39,14 @@ func New(sarc client) *Server {
 //	This returns status 200 and a list of receiver.Message
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintf(w, "GET is the only allowed verb")
+		http.Error(w, "GET is the only allowed verb", http.StatusForbidden)
+
 		return
 	}
 
 	if r.URL.Path == "/healthz" {
 		w.WriteHeader(http.StatusNoContent)
+
 		return
 	}
 
@@ -54,11 +54,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		msg := s.sarc.Pop()
 		if msg == nil {
 			w.WriteHeader(http.StatusNoContent)
+
 			return
 		}
+
 		w.Header().Set("Content-Type", "application/json")
+
 		if err := json.NewEncoder(w).Encode(msg); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 		return
@@ -66,19 +69,23 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Path == "/receive/flush" {
 		msgs := s.sarc.Flush()
+
 		w.Header().Set("Content-Type", "application/json")
+
 		if err := json.NewEncoder(w).Encode(msgs); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusNotFound)
 
-	notFoundMessage := []byte(fmt.Sprintf("ERROR! GET %s is not supported. The supported paths are below:", r.URL.Path) + usage)
+	notFoundMessage := []byte(fmt.Sprintf(
+		"ERROR! GET %s is not supported. The supported paths are below:", r.URL.Path) + usage)
 
 	if _, err := w.Write(notFoundMessage); err != nil {
-		log.Printf("error writing the body: %s", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

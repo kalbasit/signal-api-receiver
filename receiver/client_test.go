@@ -1,3 +1,4 @@
+//nolint:testpackage
 package receiver
 
 import (
@@ -52,7 +53,9 @@ func TestPop(t *testing.T) {
 		t.Parallel()
 
 		c := &Client{messages: []Message{}}
+
 		var want *Message
+
 		assert.Equal(t, want, c.Pop())
 	})
 

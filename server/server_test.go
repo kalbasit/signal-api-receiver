@@ -1,6 +1,7 @@
-package server
+package server_test
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kalbasit/signal-api-receiver/receiver"
+	"github.com/kalbasit/signal-api-receiver/server"
 )
 
 type mockClient struct {
@@ -31,6 +33,7 @@ func (mc *mockClient) Pop() *receiver.Message {
 func (mc *mockClient) Flush() []receiver.Message {
 	msgs := mc.msgs
 	mc.msgs = []receiver.Message{}
+
 	return msgs
 }
 
@@ -45,13 +48,14 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := Server{sarc: mc}
+			s := server.New(mc)
 
-			hs := httptest.NewServer(&s)
+			hs := httptest.NewServer(s)
 			defer hs.Close()
 
 			mc.msgs = []receiver.Message{}
 
+			//nolint:noctx
 			resp, err := http.Get(hs.URL + "/receive/pop")
 			require.NoError(t, err)
 
@@ -63,14 +67,15 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := Server{sarc: mc}
+			s := server.New(mc)
 
-			hs := httptest.NewServer(&s)
+			hs := httptest.NewServer(s)
 			defer hs.Close()
 
 			want := receiver.Message{Account: "0"}
 			mc.msgs = []receiver.Message{want}
 
+			//nolint:noctx
 			resp, err := http.Get(hs.URL + "/receive/pop")
 			require.NoError(t, err)
 
@@ -93,9 +98,9 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := Server{sarc: mc}
+			s := server.New(mc)
 
-			hs := httptest.NewServer(&s)
+			hs := httptest.NewServer(s)
 			defer hs.Close()
 
 			want := []receiver.Message{
@@ -108,6 +113,7 @@ func TestServeHTTP(t *testing.T) {
 			var got []receiver.Message
 
 			for range want {
+				//nolint:noctx
 				resp, err := http.Get(hs.URL + "/receive/pop")
 				require.NoError(t, err)
 
@@ -137,13 +143,14 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := Server{sarc: mc}
+			s := server.New(mc)
 
-			hs := httptest.NewServer(&s)
+			hs := httptest.NewServer(s)
 			defer hs.Close()
 
 			mc.msgs = []receiver.Message{}
 
+			//nolint:noctx
 			resp, err := http.Get(hs.URL + "/receive/flush")
 			require.NoError(t, err)
 
@@ -166,14 +173,15 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := Server{sarc: mc}
+			s := server.New(mc)
 
-			hs := httptest.NewServer(&s)
+			hs := httptest.NewServer(s)
 			defer hs.Close()
 
 			want := []receiver.Message{{Account: "0"}}
 			mc.msgs = want
 
+			//nolint:noctx
 			resp, err := http.Get(hs.URL + "/receive/flush")
 			require.NoError(t, err)
 
@@ -196,9 +204,9 @@ func TestServeHTTP(t *testing.T) {
 
 			mc := &mockClient{msgs: []receiver.Message{}}
 
-			s := Server{sarc: mc}
+			s := server.New(mc)
 
-			hs := httptest.NewServer(&s)
+			hs := httptest.NewServer(s)
 			defer hs.Close()
 
 			want := []receiver.Message{
@@ -208,6 +216,7 @@ func TestServeHTTP(t *testing.T) {
 			}
 			mc.msgs = want
 
+			//nolint:noctx
 			resp, err := http.Get(hs.URL + "/receive/flush")
 			require.NoError(t, err)
 
@@ -235,15 +244,17 @@ func TestServeHTTP(t *testing.T) {
 
 				mc := &mockClient{msgs: []receiver.Message{}}
 
-				s := Server{sarc: mc}
+				s := server.New(mc)
 
-				hs := httptest.NewServer(&s)
+				hs := httptest.NewServer(s)
 				defer hs.Close()
 
-				r, err := http.NewRequest(verb, hs.URL, nil)
+				r, err := http.NewRequestWithContext(context.Background(), verb, hs.URL, nil)
 				require.NoError(t, err)
+
 				resp, err := http.DefaultClient.Do(r)
 				require.NoError(t, err)
+
 				assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 			})
 
@@ -252,15 +263,17 @@ func TestServeHTTP(t *testing.T) {
 
 				mc := &mockClient{msgs: []receiver.Message{}}
 
-				s := Server{sarc: mc}
+				s := server.New(mc)
 
-				hs := httptest.NewServer(&s)
+				hs := httptest.NewServer(s)
 				defer hs.Close()
 
-				r, err := http.NewRequest(verb, hs.URL+"/receive/flush", nil)
+				r, err := http.NewRequestWithContext(context.Background(), verb, hs.URL+"/receive/flush", nil)
 				require.NoError(t, err)
+
 				resp, err := http.DefaultClient.Do(r)
 				require.NoError(t, err)
+
 				assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 			})
 
@@ -269,15 +282,17 @@ func TestServeHTTP(t *testing.T) {
 
 				mc := &mockClient{msgs: []receiver.Message{}}
 
-				s := Server{sarc: mc}
+				s := server.New(mc)
 
-				hs := httptest.NewServer(&s)
+				hs := httptest.NewServer(s)
 				defer hs.Close()
 
-				r, err := http.NewRequest(verb, hs.URL+"/receive/pop", nil)
+				r, err := http.NewRequestWithContext(context.Background(), verb, hs.URL+"/receive/pop", nil)
 				require.NoError(t, err)
+
 				resp, err := http.DefaultClient.Do(r)
 				require.NoError(t, err)
+
 				assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 			})
 		}

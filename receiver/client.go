@@ -63,12 +63,15 @@ func New(uri *url.URL) (*Client, error) {
 // Flush().
 func (c *Client) ReceiveLoop() {
 	log.Print("Starting the receive loop from Signal API")
+
 	for {
 		_, msg, err := c.ReadMessage()
 		if err != nil {
 			log.Printf("error returned by the websocket: %s", err)
+
 			return
 		}
+
 		c.recordMessage(msg)
 	}
 }
@@ -79,19 +82,21 @@ func (c *Client) Flush() []Message {
 	msgs := c.messages
 	c.messages = []Message{}
 	c.mu.Unlock()
+
 	return msgs
 }
 
 // Pop returns the oldest message in the queue or null if no message was found.
 func (c *Client) Pop() *Message {
 	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if len(c.messages) == 0 {
-		c.mu.Unlock()
 		return nil
 	}
+
 	msg := c.messages[0]
 	c.messages = c.messages[1:]
-	c.mu.Unlock()
 
 	return &msg
 }
@@ -101,6 +106,7 @@ func (c *Client) recordMessage(msg []byte) {
 	if err := json.Unmarshal(msg, &m); err != nil {
 		log.Printf("error decoding the message below: %s", err)
 		log.Print(string(msg[:]))
+
 		return
 	}
 
