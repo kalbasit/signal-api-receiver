@@ -19,8 +19,6 @@
         gofumpt.enable = true;
         mdformat.enable = true;
         nixfmt.enable = true;
-        sqlfluff.enable = true;
-        sqlfluff.dialect = "sqlite";
         statix.enable = true;
         yamlfmt.enable = true;
       };
