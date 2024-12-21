@@ -25,8 +25,6 @@
               ../../go.sum
               ../../main.go
               ../../pkg
-              ../../receiver
-              ../../server
             ];
             root = ../..;
           };
