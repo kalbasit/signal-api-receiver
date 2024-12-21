@@ -166,14 +166,16 @@ func (c *Client) Pop() *Message {
 func (c *Client) recordMessage(msg []byte) {
 	var m Message
 	if err := json.Unmarshal(msg, &m); err != nil {
-		log.Printf("error decoding the message below: %s", err)
+		log.Printf("Error decoding the message below: %s", err)
 		log.Print(string(msg[:]))
 
 		return
 	}
 
-	// do not record typing messages
-	if m.Envelope.DataMessage == nil {
+	// Do not record receipt, typing, group update or sync messages, etc.
+	if m.Envelope.DataMessage == nil || m.Envelope.DataMessage.Message == nil {
+		log.Printf("Ignoring non-data message: %s", string(msg))
+
 		return
 	}
 
