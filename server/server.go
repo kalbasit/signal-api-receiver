@@ -75,43 +75,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//nolint:nestif
 	if r.URL.Path == "/receive/pop" {
-		msg := s.sarc.Pop()
-		if s.repeatLast {
-			if msg == nil {
-				msg = s.last.Load()
-			} else {
-				s.last.Store(msg)
-			}
-		}
-
-		if msg == nil {
-			w.WriteHeader(http.StatusNoContent)
-
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-
-		if err := json.NewEncoder(w).Encode(msg); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		s.receivePop(w)
 
 		return
 	}
 
 	if r.URL.Path == "/receive/flush" {
-		msgs := s.sarc.Flush()
-		if s.repeatLast && len(msgs) > 0 {
-			s.last.Store(&msgs[len(msgs)-1])
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-
-		if err := json.NewEncoder(w).Encode(msgs); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		s.receiveFlush(w)
 
 		return
 	}
@@ -123,6 +94,42 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"ERROR! GET %s is not supported. The supported paths are below:", r.URL.Path) + usage)
 
 	if _, err := w.Write(notFoundMessage); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (s *Server) receivePop(w http.ResponseWriter) {
+	msg := s.sarc.Pop()
+	if s.repeatLast {
+		if msg == nil {
+			msg = s.last.Load()
+		} else {
+			s.last.Store(msg)
+		}
+	}
+
+	if msg == nil {
+		w.WriteHeader(http.StatusNoContent)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(msg); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (s *Server) receiveFlush(w http.ResponseWriter) {
+	msgs := s.sarc.Flush()
+	if s.repeatLast && len(msgs) > 0 {
+		s.last.Store(&msgs[len(msgs)-1])
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(msgs); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
