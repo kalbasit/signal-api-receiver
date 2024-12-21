@@ -20,6 +20,8 @@ type mockClient struct {
 }
 
 func (mc *mockClient) ReceiveLoop() error {
+	<-(make(chan struct{})) // block forever.
+
 	return nil
 }
 
