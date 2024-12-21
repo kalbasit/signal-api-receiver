@@ -86,6 +86,8 @@ func serveCommand(logger zerolog.Logger) *cli.Command {
 
 func serveAction(logger zerolog.Logger) cli.ActionFunc {
 	return func(ctx context.Context, cmd *cli.Command) error {
+		ctx = logger.WithContext(ctx)
+
 		ctx, cancel := context.WithCancel(ctx)
 
 		g, ctx := errgroup.WithContext(ctx)
