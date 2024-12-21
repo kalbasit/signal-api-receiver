@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Message defines the message structure received from the Signal API
+// Message defines the message structure received from the Signal API.
 type Message struct {
 	Envelope struct {
 		Source        string `json:"source"`
@@ -45,7 +45,7 @@ type Client struct {
 
 // New creates a new Signal API client and returns it.
 // An error is returned if a websocket fails to open with the Signal's API
-// /v1/receive
+// /v1/receive.
 func New(uri *url.URL) (*Client, error) {
 	c, _, err := websocket.DefaultDialer.Dial(uri.String(), http.Header{})
 	if err != nil {
@@ -60,7 +60,7 @@ func New(uri *url.URL) (*Client, error) {
 
 // ReceiveLoop is a blocking call and it loop over receiving messages over the
 // websocket and record them internally to be consumed by either Pop() or
-// Flush()
+// Flush().
 func (c *Client) ReceiveLoop() {
 	log.Print("Starting the receive loop from Signal API")
 	for {
@@ -73,7 +73,7 @@ func (c *Client) ReceiveLoop() {
 	}
 }
 
-// Flush empties out the internal queue of messages and returns them
+// Flush empties out the internal queue of messages and returns them.
 func (c *Client) Flush() []Message {
 	c.mu.Lock()
 	msgs := c.messages
@@ -82,7 +82,7 @@ func (c *Client) Flush() []Message {
 	return msgs
 }
 
-// Pop returns the oldest message in the queue or null if no message was found
+// Pop returns the oldest message in the queue or null if no message was found.
 func (c *Client) Pop() *Message {
 	c.mu.Lock()
 	if len(c.messages) == 0 {

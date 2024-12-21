@@ -35,13 +35,21 @@ func (mc *mockClient) Flush() []receiver.Message {
 }
 
 func TestServeHTTP(t *testing.T) {
-	mc := &mockClient{msgs: []receiver.Message{}}
-	s := Server{sarc: mc}
-	hs := httptest.NewServer(&s)
-	defer hs.Close()
+	t.Parallel()
 
 	t.Run("GET /receive/pop", func(t *testing.T) {
+		t.Parallel()
+
 		t.Run("no messages in the queue", func(t *testing.T) {
+			t.Parallel()
+
+			mc := &mockClient{msgs: []receiver.Message{}}
+
+			s := Server{sarc: mc}
+
+			hs := httptest.NewServer(&s)
+			defer hs.Close()
+
 			mc.msgs = []receiver.Message{}
 
 			resp, err := http.Get(hs.URL + "/receive/pop")
@@ -51,6 +59,15 @@ func TestServeHTTP(t *testing.T) {
 		})
 
 		t.Run("one message in the queue", func(t *testing.T) {
+			t.Parallel()
+
+			mc := &mockClient{msgs: []receiver.Message{}}
+
+			s := Server{sarc: mc}
+
+			hs := httptest.NewServer(&s)
+			defer hs.Close()
+
 			want := receiver.Message{Account: "0"}
 			mc.msgs = []receiver.Message{want}
 
@@ -65,12 +82,22 @@ func TestServeHTTP(t *testing.T) {
 			require.NoError(t, err)
 
 			var got receiver.Message
+
 			require.NoError(t, json.Unmarshal(body, &got))
 
 			assert.Equal(t, want, got)
 		})
 
 		t.Run("three messages in the queue", func(t *testing.T) {
+			t.Parallel()
+
+			mc := &mockClient{msgs: []receiver.Message{}}
+
+			s := Server{sarc: mc}
+
+			hs := httptest.NewServer(&s)
+			defer hs.Close()
+
 			want := []receiver.Message{
 				{Account: "0"},
 				{Account: "1"},
@@ -92,7 +119,9 @@ func TestServeHTTP(t *testing.T) {
 				require.NoError(t, err)
 
 				var m receiver.Message
+
 				require.NoError(t, json.Unmarshal(body, &m))
+
 				got = append(got, m)
 			}
 
@@ -101,7 +130,18 @@ func TestServeHTTP(t *testing.T) {
 	})
 
 	t.Run("GET /receive/flush", func(t *testing.T) {
+		t.Parallel()
+
 		t.Run("no messages in the queue", func(t *testing.T) {
+			t.Parallel()
+
+			mc := &mockClient{msgs: []receiver.Message{}}
+
+			s := Server{sarc: mc}
+
+			hs := httptest.NewServer(&s)
+			defer hs.Close()
+
 			mc.msgs = []receiver.Message{}
 
 			resp, err := http.Get(hs.URL + "/receive/flush")
@@ -115,12 +155,22 @@ func TestServeHTTP(t *testing.T) {
 			require.NoError(t, err)
 
 			var got []receiver.Message
+
 			require.NoError(t, json.Unmarshal(body, &got))
 
 			assert.Empty(t, got)
 		})
 
 		t.Run("one message in the queue", func(t *testing.T) {
+			t.Parallel()
+
+			mc := &mockClient{msgs: []receiver.Message{}}
+
+			s := Server{sarc: mc}
+
+			hs := httptest.NewServer(&s)
+			defer hs.Close()
+
 			want := []receiver.Message{{Account: "0"}}
 			mc.msgs = want
 
@@ -135,12 +185,22 @@ func TestServeHTTP(t *testing.T) {
 			require.NoError(t, err)
 
 			var got []receiver.Message
+
 			require.NoError(t, json.Unmarshal(body, &got))
 
 			assert.Equal(t, want, got)
 		})
 
 		t.Run("three messages in the queue", func(t *testing.T) {
+			t.Parallel()
+
+			mc := &mockClient{msgs: []receiver.Message{}}
+
+			s := Server{sarc: mc}
+
+			hs := httptest.NewServer(&s)
+			defer hs.Close()
+
 			want := []receiver.Message{
 				{Account: "0"},
 				{Account: "1"},
@@ -159,6 +219,7 @@ func TestServeHTTP(t *testing.T) {
 			require.NoError(t, err)
 
 			var got []receiver.Message
+
 			require.NoError(t, json.Unmarshal(body, &got))
 
 			assert.Equal(t, want, got)
@@ -166,10 +227,19 @@ func TestServeHTTP(t *testing.T) {
 	})
 
 	t.Run("anything else", func(t *testing.T) {
-		mc.msgs = []receiver.Message{}
+		t.Parallel()
 
 		for _, verb := range []string{"POST", "PUT", "PATCH", "DELETE"} {
 			t.Run(verb+" /", func(t *testing.T) {
+				t.Parallel()
+
+				mc := &mockClient{msgs: []receiver.Message{}}
+
+				s := Server{sarc: mc}
+
+				hs := httptest.NewServer(&s)
+				defer hs.Close()
+
 				r, err := http.NewRequest(verb, hs.URL, nil)
 				require.NoError(t, err)
 				resp, err := http.DefaultClient.Do(r)
@@ -178,6 +248,15 @@ func TestServeHTTP(t *testing.T) {
 			})
 
 			t.Run(verb+" /receive/flush", func(t *testing.T) {
+				t.Parallel()
+
+				mc := &mockClient{msgs: []receiver.Message{}}
+
+				s := Server{sarc: mc}
+
+				hs := httptest.NewServer(&s)
+				defer hs.Close()
+
 				r, err := http.NewRequest(verb, hs.URL+"/receive/flush", nil)
 				require.NoError(t, err)
 				resp, err := http.DefaultClient.Do(r)
@@ -186,6 +265,15 @@ func TestServeHTTP(t *testing.T) {
 			})
 
 			t.Run(verb+" /receive/pop", func(t *testing.T) {
+				t.Parallel()
+
+				mc := &mockClient{msgs: []receiver.Message{}}
+
+				s := Server{sarc: mc}
+
+				hs := httptest.NewServer(&s)
+				defer hs.Close()
+
 				r, err := http.NewRequest(verb, hs.URL+"/receive/pop", nil)
 				require.NoError(t, err)
 				resp, err := http.DefaultClient.Do(r)

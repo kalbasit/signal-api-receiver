@@ -14,7 +14,7 @@ GET /receive/pop   => Return the oldest message
 GET /receive/flush => Return all messages
 `
 
-// Server represent the HTTP server that exposes the pop/flush routes
+// Server represent the HTTP server that exposes the pop/flush routes.
 type Server struct {
 	sarc client
 }
@@ -24,7 +24,7 @@ type client interface {
 	Flush() []receiver.Message
 }
 
-// New returns a new Server
+// New returns a new Server.
 func New(sarc client) *Server {
 	return &Server{sarc: sarc}
 }
