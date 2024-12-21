@@ -5,8 +5,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kalbasit/signal-api-receiver/receiver"
 )
@@ -43,12 +45,9 @@ func TestServeHTTP(t *testing.T) {
 			mc.msgs = []receiver.Message{}
 
 			resp, err := http.Get(hs.URL + "/receive/pop")
-			if err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
-			if want, got := http.StatusNoContent, resp.StatusCode; want != got {
-				t.Errorf("want %s, got %s", http.StatusText(want), http.StatusText(got))
-			}
+			require.NoError(t, err)
+
+			assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 		})
 
 		t.Run("one message in the queue", func(t *testing.T) {
@@ -56,27 +55,19 @@ func TestServeHTTP(t *testing.T) {
 			mc.msgs = []receiver.Message{want}
 
 			resp, err := http.Get(hs.URL + "/receive/pop")
-			if err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
-			if want, got := http.StatusOK, resp.StatusCode; want != got {
-				t.Errorf("want %s, got %s", http.StatusText(want), http.StatusText(got))
-			}
+			require.NoError(t, err)
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 			body, err := io.ReadAll(resp.Body)
-			resp.Body.Close()
-			if err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
+			require.NoError(t, err)
 
 			var got receiver.Message
-			if err := json.Unmarshal(body, &got); err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
+			require.NoError(t, json.Unmarshal(body, &got))
 
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want\n%#v\ngot\n%#v", want, got)
-			}
+			assert.Equal(t, want, got)
 		})
 
 		t.Run("three messages in the queue", func(t *testing.T) {
@@ -91,29 +82,21 @@ func TestServeHTTP(t *testing.T) {
 
 			for range want {
 				resp, err := http.Get(hs.URL + "/receive/pop")
-				if err != nil {
-					t.Fatalf("expected no error, got: %s", err)
-				}
-				if want, got := http.StatusOK, resp.StatusCode; want != got {
-					t.Errorf("want %s, got %s", http.StatusText(want), http.StatusText(got))
-				}
+				require.NoError(t, err)
+
+				defer resp.Body.Close()
+
+				assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 				body, err := io.ReadAll(resp.Body)
-				resp.Body.Close()
-				if err != nil {
-					t.Fatalf("expected no error, got: %s", err)
-				}
+				require.NoError(t, err)
 
 				var m receiver.Message
-				if err := json.Unmarshal(body, &m); err != nil {
-					t.Fatalf("expected no error, got: %s", err)
-				}
+				require.NoError(t, json.Unmarshal(body, &m))
 				got = append(got, m)
 			}
 
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want\n%#v\ngot\n%#v", want, got)
-			}
+			assert.Equal(t, want, got)
 		})
 	})
 
@@ -122,27 +105,19 @@ func TestServeHTTP(t *testing.T) {
 			mc.msgs = []receiver.Message{}
 
 			resp, err := http.Get(hs.URL + "/receive/flush")
-			if err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
-			if want, got := http.StatusOK, resp.StatusCode; want != got {
-				t.Errorf("want %s, got %s", http.StatusText(want), http.StatusText(got))
-			}
+			require.NoError(t, err)
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 			body, err := io.ReadAll(resp.Body)
-			resp.Body.Close()
-			if err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
+			require.NoError(t, err)
 
 			var got []receiver.Message
-			if err := json.Unmarshal(body, &got); err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
+			require.NoError(t, json.Unmarshal(body, &got))
 
-			if len(got) != 0 {
-				t.Errorf("expected an empty response, got\n%#v", got)
-			}
+			assert.Empty(t, got)
 		})
 
 		t.Run("one message in the queue", func(t *testing.T) {
@@ -150,27 +125,19 @@ func TestServeHTTP(t *testing.T) {
 			mc.msgs = want
 
 			resp, err := http.Get(hs.URL + "/receive/flush")
-			if err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
-			if want, got := http.StatusOK, resp.StatusCode; want != got {
-				t.Errorf("want %s, got %s", http.StatusText(want), http.StatusText(got))
-			}
+			require.NoError(t, err)
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 			body, err := io.ReadAll(resp.Body)
-			resp.Body.Close()
-			if err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
+			require.NoError(t, err)
 
 			var got []receiver.Message
-			if err := json.Unmarshal(body, &got); err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
+			require.NoError(t, json.Unmarshal(body, &got))
 
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want\n%#v\ngot\n%#v", want, got)
-			}
+			assert.Equal(t, want, got)
 		})
 
 		t.Run("three messages in the queue", func(t *testing.T) {
@@ -182,27 +149,19 @@ func TestServeHTTP(t *testing.T) {
 			mc.msgs = want
 
 			resp, err := http.Get(hs.URL + "/receive/flush")
-			if err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
-			if want, got := http.StatusOK, resp.StatusCode; want != got {
-				t.Errorf("want %s, got %s", http.StatusText(want), http.StatusText(got))
-			}
+			require.NoError(t, err)
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 			body, err := io.ReadAll(resp.Body)
-			resp.Body.Close()
-			if err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
+			require.NoError(t, err)
 
 			var got []receiver.Message
-			if err := json.Unmarshal(body, &got); err != nil {
-				t.Fatalf("expected no error, got: %s", err)
-			}
+			require.NoError(t, json.Unmarshal(body, &got))
 
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want\n%#v\ngot\n%#v", want, got)
-			}
+			assert.Equal(t, want, got)
 		})
 	})
 
@@ -212,44 +171,26 @@ func TestServeHTTP(t *testing.T) {
 		for _, verb := range []string{"POST", "PUT", "PATCH", "DELETE"} {
 			t.Run(verb+" /", func(t *testing.T) {
 				r, err := http.NewRequest(verb, hs.URL, nil)
-				if err != nil {
-					t.Fatalf("expected no error, got: %s", err)
-				}
+				require.NoError(t, err)
 				resp, err := http.DefaultClient.Do(r)
-				if err != nil {
-					t.Fatalf("expected no error, got: %s", err)
-				}
-				if want, got := http.StatusForbidden, resp.StatusCode; want != got {
-					t.Errorf("want %s, got %s", http.StatusText(want), http.StatusText(got))
-				}
+				require.NoError(t, err)
+				assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 			})
 
 			t.Run(verb+" /receive/flush", func(t *testing.T) {
 				r, err := http.NewRequest(verb, hs.URL+"/receive/flush", nil)
-				if err != nil {
-					t.Fatalf("expected no error, got: %s", err)
-				}
+				require.NoError(t, err)
 				resp, err := http.DefaultClient.Do(r)
-				if err != nil {
-					t.Fatalf("expected no error, got: %s", err)
-				}
-				if want, got := http.StatusForbidden, resp.StatusCode; want != got {
-					t.Errorf("want %s, got %s", http.StatusText(want), http.StatusText(got))
-				}
+				require.NoError(t, err)
+				assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 			})
 
 			t.Run(verb+" /receive/pop", func(t *testing.T) {
 				r, err := http.NewRequest(verb, hs.URL+"/receive/pop", nil)
-				if err != nil {
-					t.Fatalf("expected no error, got: %s", err)
-				}
+				require.NoError(t, err)
 				resp, err := http.DefaultClient.Do(r)
-				if err != nil {
-					t.Fatalf("expected no error, got: %s", err)
-				}
-				if want, got := http.StatusForbidden, resp.StatusCode; want != got {
-					t.Errorf("want %s, got %s", http.StatusText(want), http.StatusText(got))
-				}
+				require.NoError(t, err)
+				assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 			})
 		}
 	})
