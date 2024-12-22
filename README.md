@@ -62,7 +62,10 @@ By default, the server starts on `:8105`. You can change this using the `--serve
 
 ### Kubernetes Deployment Example
 
-Here's an example of how to deploy `signal-api-receiver` on Kubernetes:
+Here's an example of how to deploy `signal-api-receiver` on Kubernetes alongside existing `signal-cli-rest-api` deployment that is not shown here:
+
+<details>
+<summary>Deployment</summary>
 
 ```yaml
 apiVersion: apps/v1
@@ -90,7 +93,7 @@ spec:
           args:
             - /bin/signal-api-receiver
             - serve
-            - --signal-api-url=wss://signal-api.example.com
+            - --signal-api-url=ws://signal-api.ns.svc:8080
             - --signal-account=+19876543210
           ports:
             - containerPort: 8105
@@ -108,6 +111,66 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
 ```
+
+</details>
+
+<details>
+<summary>Service</summary>
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: signal-api-receiver
+  labels:
+    app: signal-receiver
+    tier: api
+spec:
+  type: ClusterIP
+  ports:
+    - name: receiver-web
+      port: 8105
+  selector:
+    app: signal-receiver
+    tier: api
+```
+
+</details>
+
+<details>
+<summary>IngressRoute</summary>
+
+**NOTE**: This IngressRoute has been tested with Traefik.
+
+```yaml
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: signal-api
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`signal-api.example.com`)
+      priority: 10
+      middlewares:
+        - name: hsts-header
+          namespace: kube-system
+      services:
+        - name: signal-api
+          port: http-web
+    - kind: Rule
+      match: Host(`signal-api.example.com`) && Path(`/receive`)
+      priority: 20
+      services:
+        - name: signal-api-receiver
+          port: receiver-web
+  tls:
+    secretName: signal-api-tls
+```
+
+</details>
 
 ## License
 
