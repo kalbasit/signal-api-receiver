@@ -13,32 +13,46 @@ type MessageType uint8
 
 const (
 	MessageTypeUnknown MessageType = iota
-	MessageTypeReceiptMessage
-	MessageTypeTypingMessage
+
+	// MessageTypeReceipt represents a message that has a receipt.
+	MessageTypeReceipt
+
+	// MessageTypeTyping represents a message that has a typing.
+	MessageTypeTyping
+
+	// MessageTypeData represents a message that has data.
+	MessageTypeData
+
+	// MessageTypeDataMessage represents a message that has data and has a message.
 	MessageTypeDataMessage
-	MessageTypeSyncMessage
+
+	// MessageTypeSync represents a message that has a sync.
+	MessageTypeSync
 )
 
 // AllMessageTypes returns all valid message types.
 func AllMessageTypes() []MessageType {
 	return []MessageType{
-		MessageTypeReceiptMessage,
-		MessageTypeTypingMessage,
+		MessageTypeReceipt,
+		MessageTypeTyping,
+		MessageTypeData,
 		MessageTypeDataMessage,
-		MessageTypeSyncMessage,
+		MessageTypeSync,
 	}
 }
 
 // String returns the string representation of a message type.
 func (mt MessageType) String() string {
 	switch mt {
-	case MessageTypeReceiptMessage:
+	case MessageTypeReceipt:
 		return "receipt"
-	case MessageTypeTypingMessage:
+	case MessageTypeTyping:
 		return "typing"
-	case MessageTypeDataMessage:
+	case MessageTypeData:
 		return "data"
-	case MessageTypeSyncMessage:
+	case MessageTypeDataMessage:
+		return "data-message"
+	case MessageTypeSync:
 		return "sync"
 	case MessageTypeUnknown:
 		fallthrough
@@ -51,16 +65,28 @@ func (mt MessageType) String() string {
 func ParseMessageType(mt string) (MessageType, error) {
 	switch mt {
 	case "receipt":
-		return MessageTypeReceiptMessage, nil
+		return MessageTypeReceipt, nil
 	case "typing":
-		return MessageTypeTypingMessage, nil
+		return MessageTypeTyping, nil
 	case "data":
+		return MessageTypeData, nil
+	case "data-message":
 		return MessageTypeDataMessage, nil
 	case "sync":
-		return MessageTypeSyncMessage, nil
+		return MessageTypeSync, nil
 	default:
 		return MessageTypeUnknown, ErrMessageTypeUnknown
 	}
+}
+
+func messageTypesToStrings(mts []MessageType) []string {
+	ss := make([]string, 0, len(mts))
+
+	for _, mt := range mts {
+		ss = append(ss, mt.String())
+	}
+
+	return ss
 }
 
 // Message defines the message structure received from the Signal API.
@@ -147,23 +173,29 @@ type Attachment struct {
 	UploadTimestamp *int64  `json:"uploadTimestamp"`
 }
 
-// MessageType returns the type of a message.
-func (m Message) MessageType() MessageType {
+// MessageTypes returns the types of a message.
+func (m Message) MessageTypes() []MessageType {
+	mts := make([]MessageType, 0)
+
 	if m.Envelope.ReceiptMessage != nil {
-		return MessageTypeReceiptMessage
+		mts = append(mts, MessageTypeReceipt)
 	}
 
 	if m.Envelope.TypingMessage != nil {
-		return MessageTypeTypingMessage
+		mts = append(mts, MessageTypeTyping)
 	}
 
 	if m.Envelope.DataMessage != nil {
-		return MessageTypeDataMessage
+		mts = append(mts, MessageTypeData)
+
+		if m.Envelope.DataMessage.Message != nil {
+			mts = append(mts, MessageTypeDataMessage)
+		}
 	}
 
 	if m.Envelope.SyncMessage != nil {
-		return MessageTypeSyncMessage
+		mts = append(mts, MessageTypeSync)
 	}
 
-	return MessageTypeUnknown
+	return mts
 }

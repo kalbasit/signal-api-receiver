@@ -20,7 +20,9 @@ func TestMessageType(t *testing.T) {
 			},
 		}
 
-		assert.Equal(t, receiver.MessageTypeReceiptMessage, m.MessageType())
+		assert.Equal(t,
+			[]receiver.MessageType{receiver.MessageTypeReceipt},
+			m.MessageTypes())
 	})
 
 	t.Run("MessageTypeTypingMessage", func(t *testing.T) {
@@ -32,10 +34,12 @@ func TestMessageType(t *testing.T) {
 			},
 		}
 
-		assert.Equal(t, receiver.MessageTypeTypingMessage, m.MessageType())
+		assert.Equal(t,
+			[]receiver.MessageType{receiver.MessageTypeTyping},
+			m.MessageTypes())
 	})
 
-	t.Run("MessageTypeDataMessage", func(t *testing.T) {
+	t.Run("MessageTypeData", func(t *testing.T) {
 		t.Parallel()
 
 		m := receiver.Message{
@@ -44,7 +48,28 @@ func TestMessageType(t *testing.T) {
 			},
 		}
 
-		assert.Equal(t, receiver.MessageTypeDataMessage, m.MessageType())
+		assert.Equal(t,
+			[]receiver.MessageType{receiver.MessageTypeData},
+			m.MessageTypes())
+	})
+
+	t.Run("MessageTypeDataMessage", func(t *testing.T) {
+		t.Parallel()
+
+		msg := "test"
+
+		m := receiver.Message{
+			Envelope: receiver.Envelope{
+				DataMessage: &receiver.DataMessage{Message: &msg},
+			},
+		}
+
+		assert.Equal(t,
+			[]receiver.MessageType{
+				receiver.MessageTypeData,
+				receiver.MessageTypeDataMessage,
+			},
+			m.MessageTypes())
 	})
 
 	t.Run("MessageTypeSyncMessage", func(t *testing.T) {
@@ -56,6 +81,8 @@ func TestMessageType(t *testing.T) {
 			},
 		}
 
-		assert.Equal(t, receiver.MessageTypeSyncMessage, m.MessageType())
+		assert.Equal(t,
+			[]receiver.MessageType{receiver.MessageTypeSync},
+			m.MessageTypes())
 	})
 }
