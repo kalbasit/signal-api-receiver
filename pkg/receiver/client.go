@@ -19,6 +19,8 @@ type Client struct {
 
 	logger zerolog.Logger
 
+	allowedMessageTypes map[MessageType]bool
+
 	mu       sync.Mutex
 	messages []Message
 }
@@ -26,8 +28,21 @@ type Client struct {
 // New creates a new Signal API client and returns it.
 // An error is returned if a websocket fails to open with the Signal's API
 // /v1/receive.
-func New(ctx context.Context, uri *url.URL) (*Client, error) {
-	c := &Client{uri: uri, logger: *zerolog.Ctx(ctx)}
+func New(ctx context.Context, uri *url.URL, messageTypes []string) (*Client, error) {
+	c := &Client{
+		uri:                 uri,
+		logger:              *zerolog.Ctx(ctx),
+		allowedMessageTypes: make(map[MessageType]bool),
+	}
+
+	for _, mts := range messageTypes {
+		mt, err := ParseMessageType(mts)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse message type %q: %w", mts, err)
+		}
+
+		c.allowedMessageTypes[mt] = true
+	}
 
 	return c, c.Connect()
 }
@@ -107,8 +122,7 @@ func (c *Client) recordMessage(msg []byte) {
 		return
 	}
 
-	// Do not record receipt, typing, group update or sync messages, etc.
-	if m.Envelope.DataMessage == nil || m.Envelope.DataMessage.Message == nil {
+	if !c.allowedMessageTypes[m.MessageType()] {
 		//nolint:zerologlint
 		if c.logger.Debug().Enabled() {
 			c.logger.

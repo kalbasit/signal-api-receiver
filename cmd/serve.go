@@ -35,6 +35,26 @@ func serveCommand() *cli.Command {
 		Usage:   "start the signal-api-receiver HTTP server",
 		Action:  serveAction(),
 		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name: "record-message-type",
+				Usage: fmt.Sprintf(
+					"Which message types to record? Valid message types: %v",
+					receiver.AllMessageTypes(),
+				),
+				Value: []string{
+					receiver.MessageTypeDataMessage.String(),
+				},
+				Validator: func(mts []string) error {
+					for _, mt := range mts {
+						_, err := receiver.ParseMessageType(mt)
+						if err != nil {
+							return fmt.Errorf("could not parse message type %q: %w", mt, err)
+						}
+					}
+
+					return nil
+				},
+			},
 			&cli.BoolFlag{
 				Name:    "repeat-last-message",
 				Usage:   "Repeat the last message if there are no new messages (applies to /receive/pop)",
