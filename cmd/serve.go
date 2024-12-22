@@ -141,7 +141,7 @@ func serveAction() cli.ActionFunc {
 			Str("signal-api-url", uri.String()).
 			Msg("the fully qualified signal-api URL was computed")
 
-		sarc, err := receiver.New(ctx, uri)
+		sarc, err := receiver.New(ctx, uri, cmd.StringSlice("record-message-type")...)
 		if err != nil {
 			return fmt.Errorf("error creating a new receiver: %w", err)
 		}

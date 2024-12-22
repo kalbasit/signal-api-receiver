@@ -28,7 +28,7 @@ type Client struct {
 // New creates a new Signal API client and returns it.
 // An error is returned if a websocket fails to open with the Signal's API
 // /v1/receive.
-func New(ctx context.Context, uri *url.URL, messageTypes []string) (*Client, error) {
+func New(ctx context.Context, uri *url.URL, messageTypes ...string) (*Client, error) {
 	c := &Client{
 		uri:                 uri,
 		logger:              *zerolog.Ctx(ctx),
