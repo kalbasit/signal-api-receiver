@@ -19,6 +19,16 @@ const (
 	MessageTypeSyncMessage
 )
 
+// AllMessageTypes returns all valid message types.
+func AllMessageTypes() []MessageType {
+	return []MessageType{
+		MessageTypeReceiptMessage,
+		MessageTypeTypingMessage,
+		MessageTypeDataMessage,
+		MessageTypeSyncMessage,
+	}
+}
+
 // String returns the string representation of a message type.
 func (mt MessageType) String() string {
 	switch mt {
