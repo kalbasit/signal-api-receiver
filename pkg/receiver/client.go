@@ -127,7 +127,7 @@ func (c *Client) recordMessage(msg []byte) {
 		return
 	}
 
-	if !c.recordedMessageTypes[m.MessageType()] {
+	if !c.shouldRecordMessage(m) {
 		//nolint:zerologlint
 		if c.logger.Debug().Enabled() {
 			c.logger.
@@ -162,4 +162,14 @@ func (c *Client) recordMessage(msg []byte) {
 			Strs("message-types", m.MessageTypesStrings()).
 			Msg("a signal message was successfully recorded")
 	}
+}
+
+func (c *Client) shouldRecordMessage(m Message) bool {
+	for _, mt := range m.MessageTypes() {
+		if c.recordedMessageTypes[mt] {
+			return true
+		}
+	}
+
+	return false
 }
