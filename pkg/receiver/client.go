@@ -109,10 +109,17 @@ func (c *Client) recordMessage(msg []byte) {
 
 	// Do not record receipt, typing, group update or sync messages, etc.
 	if m.Envelope.DataMessage == nil || m.Envelope.DataMessage.Message == nil {
-		c.logger.
-			Info().
-			Str("message", string(msg)).
-			Msg("ignoring non-data message")
+		//nolint:zerologlint
+		if c.logger.Debug().Enabled() {
+			c.logger.
+				Debug().
+				Interface("signal-message", m).
+				Msg("ignoring non-data message")
+		} else {
+			c.logger.
+				Info().
+				Msg("ignoring non-data message")
+		}
 
 		return
 	}
@@ -121,8 +128,15 @@ func (c *Client) recordMessage(msg []byte) {
 	c.messages = append(c.messages, m)
 	c.mu.Unlock()
 
-	c.logger.
-		Info().
-		Str("message", string(msg)).
-		Msg("a signal message was successfully recorded")
+	//nolint:zerologlint
+	if c.logger.Debug().Enabled() {
+		c.logger.
+			Debug().
+			Interface("signal-message", m).
+			Msg("a signal message was successfully recorded")
+	} else {
+		c.logger.
+			Info().
+			Msg("a signal message was successfully recorded")
+	}
 }
