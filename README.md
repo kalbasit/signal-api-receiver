@@ -138,9 +138,7 @@ spec:
 </details>
 
 <details>
-<summary>IngressRoute</summary>
-
-**NOTE**: This IngressRoute has been tested with Traefik.
+<summary>Traefik IngressRoute</summary>
 
 ```yaml
 apiVersion: traefik.containo.us/v1alpha1
@@ -149,17 +147,17 @@ metadata:
   name: signal-api
 spec:
   entryPoints:
+    - web
     - websecure
   routes:
+    # This rule is for existing signal-cli-rest-api service that is not shown here.
     - kind: Rule
       match: Host(`signal-api.example.com`)
       priority: 10
-      middlewares:
-        - name: hsts-header
-          namespace: kube-system
       services:
         - name: signal-api
           port: http-web
+    # The new rule for signal-api-receiver.
     - kind: Rule
       match: Host(`signal-api.example.com`) && Path(`/receive`)
       priority: 20
