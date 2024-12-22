@@ -55,10 +55,10 @@ specific use case.
 
 To run `signal-api-receiver`, you need to provide the following command-line flags:
 
-- `-signal-account string`: The account number for Signal.
-- `-signal-api-url string`: The URL of the Signal API, including the scheme (e.g., `wss://signal-api.example.com`).
+- `--signal-account string`: The account number for Signal.
+- `--signal-api-url string`: The URL of the Signal API, including the scheme (e.g., `wss://signal-api.example.com`).
 
-By default, the server starts on `:8105`. You can change this using the `-addr` flag (e.g., `-addr :8080`).
+By default, the server starts on `:8105`. You can change this using the `--server-addr` flag (e.g., `--server-addr :8080`).
 
 ### Kubernetes Deployment Example
 
