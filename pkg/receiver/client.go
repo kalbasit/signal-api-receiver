@@ -101,7 +101,7 @@ func (c *Client) recordMessage(msg []byte) {
 		c.logger.
 			Error().
 			Err(err).
-			Str("message", string(msg)).
+			Str("signal-message", string(msg)).
 			Msg("error decoding the message")
 
 		return
