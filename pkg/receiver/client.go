@@ -113,13 +113,13 @@ func (c *Client) recordMessage(msg []byte) {
 		if c.logger.Debug().Enabled() {
 			c.logger.
 				Debug().
-				Strs("message-types", messageTypesToStrings(m.MessageTypes())).
+				Strs("message-types", m.MessageTypesStrings()).
 				Interface("message-content", m).
 				Msg("ignoring non-data message")
 		} else {
 			c.logger.
 				Info().
-				Strs("message-types", messageTypesToStrings(m.MessageTypes())).
+				Strs("message-types", m.MessageTypesStrings()).
 				Msg("ignoring non-data message")
 		}
 
@@ -134,13 +134,13 @@ func (c *Client) recordMessage(msg []byte) {
 	if c.logger.Debug().Enabled() {
 		c.logger.
 			Debug().
-			Strs("message-types", messageTypesToStrings(m.MessageTypes())).
+			Strs("message-types", m.MessageTypesStrings()).
 			Interface("message-content", m).
 			Msg("a signal message was successfully recorded")
 	} else {
 		c.logger.
 			Info().
-			Strs("message-types", messageTypesToStrings(m.MessageTypes())).
+			Strs("message-types", m.MessageTypesStrings()).
 			Msg("a signal message was successfully recorded")
 	}
 }

@@ -79,16 +79,6 @@ func ParseMessageType(mt string) (MessageType, error) {
 	}
 }
 
-func messageTypesToStrings(mts []MessageType) []string {
-	ss := make([]string, 0, len(mts))
-
-	for _, mt := range mts {
-		ss = append(ss, mt.String())
-	}
-
-	return ss
-}
-
 // Message defines the message structure received from the Signal API.
 type Message struct {
 	Account  string   `json:"account"`
@@ -198,4 +188,17 @@ func (m Message) MessageTypes() []MessageType {
 	}
 
 	return mts
+}
+
+// MessageTypes returns the types of a message encoded as a string.
+func (m Message) MessageTypesStrings() []string {
+	mts := m.MessageTypes()
+
+	ss := make([]string, 0, len(mts))
+
+	for _, mt := range mts {
+		ss = append(ss, mt.String())
+	}
+
+	return ss
 }
