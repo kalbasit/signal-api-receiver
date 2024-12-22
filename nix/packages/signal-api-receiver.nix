@@ -29,6 +29,8 @@
             root = ../..;
           };
 
+          CGO_ENABLED = 0;
+
           ldflags = [
             "-X github.com/kalbasit/signal-api-receiver/cmd.Version=${version}"
           ];
