@@ -19,7 +19,8 @@ type Client struct {
 
 	logger zerolog.Logger
 
-	allowedMessageTypes map[MessageType]bool
+	recordedMessageTypesStrs []string
+	recordedMessageTypes     map[MessageType]bool
 
 	mu       sync.Mutex
 	messages []Message
@@ -30,9 +31,10 @@ type Client struct {
 // /v1/receive.
 func New(ctx context.Context, uri *url.URL, messageTypes ...string) (*Client, error) {
 	c := &Client{
-		uri:                 uri,
-		logger:              *zerolog.Ctx(ctx),
-		allowedMessageTypes: make(map[MessageType]bool),
+		uri:                      uri,
+		logger:                   *zerolog.Ctx(ctx),
+		recordedMessageTypesStrs: messageTypes,
+		recordedMessageTypes:     make(map[MessageType]bool),
 	}
 
 	for _, mts := range messageTypes {
@@ -41,7 +43,7 @@ func New(ctx context.Context, uri *url.URL, messageTypes ...string) (*Client, er
 			return nil, fmt.Errorf("could not parse message type %q: %w", mts, err)
 		}
 
-		c.allowedMessageTypes[mt] = true
+		c.recordedMessageTypes[mt] = true
 	}
 
 	return c, c.Connect()
@@ -71,7 +73,10 @@ func (c *Client) Connect() error {
 func (c *Client) ReceiveLoop() error {
 	log := c.logger.With().Str("func", "ReceiveLoop").Logger()
 
-	log.Info().Msg("Starting the receive loop from Signal API")
+	log.
+		Info().
+		Strs("recorded-message-types", c.recordedMessageTypesStrs).
+		Msg("Starting the receive loop from Signal API")
 
 	for {
 		_, msg, err := c.conn.ReadMessage()
@@ -122,7 +127,7 @@ func (c *Client) recordMessage(msg []byte) {
 		return
 	}
 
-	if !c.allowedMessageTypes[m.MessageType()] {
+	if !c.recordedMessageTypes[m.MessageType()] {
 		//nolint:zerologlint
 		if c.logger.Debug().Enabled() {
 			c.logger.
