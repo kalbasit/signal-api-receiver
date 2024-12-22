@@ -28,12 +28,12 @@ var (
 	accountRegex = regexp.MustCompile(`^\+[0-9]+$`)
 )
 
-func serveCommand(logger zerolog.Logger) *cli.Command {
+func serveCommand() *cli.Command {
 	return &cli.Command{
 		Name:    "serve",
 		Aliases: []string{"s"},
 		Usage:   "start the signal-api-receiver HTTP server",
-		Action:  serveAction(logger.With().Str("cmd", "serve").Logger()),
+		Action:  serveAction(),
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "repeat-last-message",
@@ -84,8 +84,10 @@ func serveCommand(logger zerolog.Logger) *cli.Command {
 	}
 }
 
-func serveAction(logger zerolog.Logger) cli.ActionFunc {
+func serveAction() cli.ActionFunc {
 	return func(ctx context.Context, cmd *cli.Command) error {
+		logger := zerolog.Ctx(ctx).With().Str("cmd", "serve").Logger()
+
 		ctx = logger.WithContext(ctx)
 
 		ctx, cancel := context.WithCancel(ctx)
