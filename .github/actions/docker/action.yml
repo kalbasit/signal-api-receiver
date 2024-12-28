@@ -1,6 +1,9 @@
 name: Build and push Docker images
 description: "Build and push Docker images"
 inputs:
+  system:
+    description: "The system for which to build the docker images for"
+    default: "x86_64-linux"
   images:
     description: "List of Docker images to use as base name for tags"
     required: false
@@ -34,14 +37,21 @@ runs:
       with:
         username: ${{ inputs.username }}
         password: ${{ inputs.password }}
+    - name: Install required cross-system tool
+      if: "${{ inputs.system != 'x86_64-linux' }}"
+      run: sudo apt-get install -y qemu-user-static
+      shell: bash
     - uses: DeterminateSystems/nix-installer-action@v16
+      with:
+        extra-conf: |
+          extra-platforms = ${{ inputs.system }}
     - uses: DeterminateSystems/magic-nix-cache-action@v8
     - name: Build the docker image pusher
       shell: bash
       env:
         RELEASE_VERSION: ${{ github.ref_name }}
       run: |
-        nix build -L --impure .#push-docker-image
+        nix build -L --impure .#packages.${{ inputs.system }}.push-docker-image
     - name: Push the docker image
       if: ${{ inputs.push }}
       env:
