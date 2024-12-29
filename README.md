@@ -45,11 +45,11 @@ specific use case.
 `signal-api-receiver` exposes the following API endpoints:
 
 - `GET /receive/pop`:
-    - Returns one message at a time from the queue.
-    - If no messages are available, it returns a `204 No Content` status.
+      - Returns one message at a time from the queue.
+      - If no messages are available, it returns a `204 No Content` status.
 - `GET /receive/flush`:
-    - Returns all available messages as a list.
-    - If no messages are available, it returns an empty list (`[]`).
+      - Returns all available messages as a list.
+      - If no messages are available, it returns an empty list (`[]`).
 
 ## Usage
 
@@ -65,9 +65,9 @@ Here's an example docker run command:
 
 ```bash
 docker run -p 8105:8105 \
-  -e SIGNAL_ACCOUNT="your_signal_account" \
-  -e SIGNAL_API_URL="wss://your-signal-api-url" \
-  kalbasit/signal-api-receiver:latest
+  -e SIGNAL_ACCOUNT="your_signal_account" \
+  -e SIGNAL_API_URL="wss://your-signal-api-url" \
+  kalbasit/signal-api-receiver:latest
 ```
 
 **Explanation**:
@@ -80,10 +80,19 @@ Refer to the Docker Hub page for more information and advanced configuration opt
 
 ### Running from Source
 
-To run signal-api-receiver from source, you need to provide the following command-line flags:
+To run `signal-api-receiver` from source, you need to provide the following command-line flags:
 
-- `--signal-account string`: The account number for Signal.
-- `--signal-api-url string`: The URL of the Signal API, including the scheme (e.g., `wss://signal-api.example.com`).
+**Global Options:**
+
+- `--log-level <value>`: Sets the logging level (default: "info"). Can be set using the `$LOG_LEVEL` environment variable.
+
+**Options for the `serve` command:**
+
+- `--record-message-type <value>`: Specifies which message types to record. Valid types are: "receipt", "typing", "data", "data-message", and "sync". This flag can be repeated to record multiple types (default: "data-message").
+- `--repeat-last-message`: If enabled, repeats the last message if no new messages are available (applies to `/receive/pop`). This can be set using the `$REPEAT_LAST_MESSAGE` environment variable (default: false).
+- `--signal-account <value>`: **Required.** Specifies your Signal account number. Can be set using the `$SIGNAL_ACCOUNT` environment variable.
+- `--signal-api-url <value>`: **Required.** Specifies the URL of your Signal API, including the scheme (e.g., `wss://signal-api.example.com`). Can be set using the `$SIGNAL_API_URL` environment variable.
+- `--server-addr <value>`: Sets the address where the server will listen (default: ":8105"). Can be set using the `$SERVER_ADDR` environment variable.
 
 By default, the server starts on `:8105`. You can change this using the `--server-addr` flag (e.g., `--server-addr :8080`).
 
@@ -104,45 +113,45 @@ Here's an example of how to deploy `signal-api-receiver` on Kubernetes alongside
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: signal-api-receiver
-  labels:
-    app: signal-receiver
-    tier: api
+  name: signal-api-receiver
+  labels:
+    app: signal-receiver
+    tier: api
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: signal-receiver
-      tier: api
-  template:
-    metadata:
-      labels:
-        app: signal-receiver
-        tier: api
-    spec:
-      containers:
-        - image: kalbasit/signal-receiver:latest
-          name: signal-receiver
-          args:
-            - /bin/signal-api-receiver
-            - serve
-            - --signal-api-url=ws://signal-api.ns.svc:8080
-            - --signal-account=+19876543210
-          ports:
-            - containerPort: 8105
-              name: receiver-web
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: receiver-web
-            initialDelaySeconds: 15
-            periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: receiver-web
-            initialDelaySeconds: 5
-            periodSeconds: 10
+  replicas: 1
+  selector:
+    matchLabels:
+      app: signal-receiver
+      tier: api
+  template:
+    metadata:
+      labels:
+        app: signal-receiver
+        tier: api
+    spec:
+      containers:
+        - image: kalbasit/signal-receiver:latest
+          name: signal-receiver
+          args:
+            - /bin/signal-api-receiver
+            - serve
+            - --signal-api-url=ws://signal-api.ns.svc:8080
+            - --signal-account=+19876543210
+          ports:
+            - containerPort: 8105
+              name: receiver-web
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: receiver-web
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: receiver-web
+            initialDelaySeconds: 5
+            periodSeconds: 10
 ```
 
 </details>
@@ -154,18 +163,18 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: signal-api-receiver
-  labels:
-    app: signal-receiver
-    tier: api
+  name: signal-api-receiver
+  labels:
+    app: signal-receiver
+    tier: api
 spec:
-  type: ClusterIP
-  ports:
-    - name: receiver-web
-      port: 8105
-  selector:
-    app: signal-receiver
-    tier: api
+  type: ClusterIP
+  ports:
+    - name: receiver-web
+      port: 8105
+  selector:
+    app: signal-receiver
+    tier: api
 ```
 
 </details>
@@ -177,28 +186,28 @@ spec:
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: signal-api
+  name: signal-api
 spec:
-  entryPoints:
-    - web
-    - websecure
-  routes:
-    # This rule is for existing signal-cli-rest-api service that is not shown here.
-    - kind: Rule
-      match: Host(`signal-api.example.com`)
-      priority: 10
-      services:
-        - name: signal-api
-          port: http-web
-    # The new rule for signal-api-receiver.
-    - kind: Rule
-      match: Host(`signal-api.example.com`) && Path(`/receive`)
-      priority: 20
-      services:
-        - name: signal-api-receiver
-          port: receiver-web
-  tls:
-    secretName: signal-api-tls
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    # This rule is for existing signal-cli-rest-api service that is not shown here.
+    - kind: Rule
+      match: Host(`signal-api.example.com`)
+      priority: 10
+      services:
+        - name: signal-api
+          port: http-web
+    # The new rule for signal-api-receiver.
+    - kind: Rule
+      match: Host(`signal-api.example.com`) && Path(`/receive`)
+      priority: 20
+      services:
+        - name: signal-api-receiver
+          port: receiver-web
+  tls:
+    secretName: signal-api-tls
 ```
 
 </details>
