@@ -1,4 +1,4 @@
-# signal-api-receiver
+# Signal API Receiver
 
 ## Introduction
 
