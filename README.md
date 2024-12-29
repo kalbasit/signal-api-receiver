@@ -45,20 +45,53 @@ specific use case.
 `signal-api-receiver` exposes the following API endpoints:
 
 - `GET /receive/pop`:
-  - Returns one message at a time from the queue.
-  - If no messages are available, it returns a `204 No Content` status.
+    - Returns one message at a time from the queue.
+    - If no messages are available, it returns a `204 No Content` status.
 - `GET /receive/flush`:
-  - Returns all available messages as a list.
-  - If no messages are available, it returns an empty list (`[]`).
+    - Returns all available messages as a list.
+    - If no messages are available, it returns an empty list (`[]`).
 
 ## Usage
 
-To run `signal-api-receiver`, you need to provide the following command-line flags:
+### Running with Docker
+
+`signal-api-receiver` is available as a Docker image on Docker Hub. This is the recommended way to run the application.
+
+```bash
+docker pull kalbasit/signal-api-receiver:latest
+```
+
+Here's an example docker run command:
+
+```bash
+docker run -p 8105:8105 \
+  -e SIGNAL_ACCOUNT="your_signal_account" \
+  -e SIGNAL_API_URL="wss://your-signal-api-url" \
+  kalbasit/signal-api-receiver:latest
+```
+
+**Explanation**:
+
+- `-p 8105:8105`: Maps port 8105 on the host to port 8105 in the container.
+- `-e SIGNAL_ACCOUNT="your_signal_account"`: Sets the `SIGNAL_ACCOUNT` environment variable. Replace with your actual Signal account.
+- `-e SIGNAL_API_URL="wss://your-signal-api-url"`: Sets the `SIGNAL_API_URL` environment variable. Replace with the URL of your Signal API.
+
+Refer to the Docker Hub page for more information and advanced configuration options: https://hub.docker.com/r/kalbasit/signal-api-receiver
+
+### Running from Source
+
+To run signal-api-receiver from source, you need to provide the following command-line flags:
 
 - `--signal-account string`: The account number for Signal.
 - `--signal-api-url string`: The URL of the Signal API, including the scheme (e.g., `wss://signal-api.example.com`).
 
 By default, the server starts on `:8105`. You can change this using the `--server-addr` flag (e.g., `--server-addr :8080`).
+
+You can see all available options by running:
+
+```bash
+go run . serve --help
+```
 
 ### Kubernetes Deployment Example
 
