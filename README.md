@@ -217,7 +217,7 @@ spec:
 This project is licensed under the MIT License - see the [LICENSE](/LICENSE) file for details.
 
 [@bbernhard]: https://github.com/bbernhard
+[docker hub]: https://hub.docker.com/r/kalbasit/signal-api-receiver
 [exec-mode]: https://github.com/bbernhard/signal-cli-rest-api?tab=readme-ov-file#execution-modes
 [signal-cli-rest-api]: https://github.com/bbernhard/signal-cli-rest-api
 [signal_messenger]: https://www.home-assistant.io/integrations/signal_messenger/#sending-messages-to-signal-to-trigger-events
-[Docker Hub]: https://hub.docker.com/r/kalbasit/signal-api-receiver
