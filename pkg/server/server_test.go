@@ -17,17 +17,42 @@ import (
 )
 
 type mockClient struct {
+	connectCalled int
+	connectErr    chan error
+	recvMsg       chan receiver.Message
+	recvErr       chan error
+
 	msgs []receiver.Message
 }
 
+func newMockClient() *mockClient {
+	return &mockClient{
+		connectErr: make(chan error),
+		recvMsg:    make(chan receiver.Message),
+		recvErr:    make(chan error),
+
+		msgs: []receiver.Message{},
+	}
+}
+
 func (mc *mockClient) Connect() error {
+	mc.connectCalled++
+	if mc.connectErr != nil {
+		return <-mc.connectErr
+	}
+
 	return nil
 }
 
 func (mc *mockClient) ReceiveLoop() error {
-	<-(make(chan struct{})) // block forever.
-
-	return nil
+	for {
+		select {
+		case msg := <-mc.recvMsg:
+			mc.msgs = append(mc.msgs, msg)
+		case err := <-mc.recvErr:
+			return err
+		}
+	}
 }
 
 func (mc *mockClient) Pop() *receiver.Message {
@@ -48,6 +73,31 @@ func (mc *mockClient) Flush() []receiver.Message {
 	return msgs
 }
 
+func TestServerReconnect(t *testing.T) {
+	t.Parallel()
+
+	mc := newMockClient()
+
+	server.New(newContext(), mc, false)
+
+	assert.Zero(t, mc.connectCalled)
+
+	mc.recvMsg <- receiver.Message{Account: "0"}
+
+	mc.recvErr <- nil
+	mc.connectErr <- nil
+
+	assert.Len(t, mc.msgs, 1)
+
+	mc.recvMsg <- receiver.Message{Account: "0"}
+
+	assert.Equal(t, 1, mc.connectCalled)
+
+	mc.recvErr <- nil
+
+	assert.Len(t, mc.msgs, 2)
+}
+
 func TestServeHTTP(t *testing.T) {
 	t.Parallel()
 
@@ -57,7 +107,7 @@ func TestServeHTTP(t *testing.T) {
 		t.Run("no messages in the queue", func(t *testing.T) {
 			t.Parallel()
 
-			mc := &mockClient{msgs: []receiver.Message{}}
+			mc := newMockClient()
 
 			s := server.New(newContext(), mc, false)
 
@@ -76,7 +126,7 @@ func TestServeHTTP(t *testing.T) {
 		t.Run("one message in the queue", func(t *testing.T) {
 			t.Parallel()
 
-			mc := &mockClient{msgs: []receiver.Message{}}
+			mc := newMockClient()
 
 			s := server.New(newContext(), mc, false)
 
@@ -107,7 +157,7 @@ func TestServeHTTP(t *testing.T) {
 		t.Run("three messages in the queue", func(t *testing.T) {
 			t.Parallel()
 
-			mc := &mockClient{msgs: []receiver.Message{}}
+			mc := newMockClient()
 
 			s := server.New(newContext(), mc, false)
 
@@ -148,7 +198,7 @@ func TestServeHTTP(t *testing.T) {
 		t.Run("can repeat last message if enabled", func(t *testing.T) {
 			t.Parallel()
 
-			mc := &mockClient{msgs: []receiver.Message{}}
+			mc := newMockClient()
 
 			s := server.New(newContext(), mc, true)
 
@@ -185,7 +235,7 @@ func TestServeHTTP(t *testing.T) {
 		t.Run("no messages in the queue", func(t *testing.T) {
 			t.Parallel()
 
-			mc := &mockClient{msgs: []receiver.Message{}}
+			mc := newMockClient()
 
 			s := server.New(newContext(), mc, false)
 
@@ -215,7 +265,7 @@ func TestServeHTTP(t *testing.T) {
 		t.Run("one message in the queue", func(t *testing.T) {
 			t.Parallel()
 
-			mc := &mockClient{msgs: []receiver.Message{}}
+			mc := newMockClient()
 
 			s := server.New(newContext(), mc, false)
 
@@ -246,7 +296,7 @@ func TestServeHTTP(t *testing.T) {
 		t.Run("three messages in the queue", func(t *testing.T) {
 			t.Parallel()
 
-			mc := &mockClient{msgs: []receiver.Message{}}
+			mc := newMockClient()
 
 			s := server.New(newContext(), mc, false)
 
@@ -286,7 +336,7 @@ func TestServeHTTP(t *testing.T) {
 			t.Run(verb+" /", func(t *testing.T) {
 				t.Parallel()
 
-				mc := &mockClient{msgs: []receiver.Message{}}
+				mc := newMockClient()
 
 				s := server.New(newContext(), mc, false)
 
@@ -305,7 +355,7 @@ func TestServeHTTP(t *testing.T) {
 			t.Run(verb+" /receive/flush", func(t *testing.T) {
 				t.Parallel()
 
-				mc := &mockClient{msgs: []receiver.Message{}}
+				mc := newMockClient()
 
 				s := server.New(newContext(), mc, false)
 
@@ -324,7 +374,7 @@ func TestServeHTTP(t *testing.T) {
 			t.Run(verb+" /receive/pop", func(t *testing.T) {
 				t.Parallel()
 
-				mc := &mockClient{msgs: []receiver.Message{}}
+				mc := newMockClient()
 
 				s := server.New(newContext(), mc, false)
 
