@@ -45,11 +45,11 @@ specific use case.
 `signal-api-receiver` exposes the following API endpoints:
 
 - `GET /receive/pop`:
-  \- Returns one message at a time from the queue.
-  \- If no messages are available, it returns a `204 No Content` status.
+  - Returns one message at a time from the queue.
+  - If no messages are available, it returns a `204 No Content` status.
 - `GET /receive/flush`:
-  \- Returns all available messages as a list.
-  \- If no messages are available, it returns an empty list (`[]`).
+  - Returns all available messages as a list.
+  - If no messages are available, it returns an empty list (`[]`).
 
 ## Usage
 
