@@ -55,7 +55,7 @@ specific use case.
 
 ### Running with Docker
 
-`signal-api-receiver` is available as a Docker image on Docker Hub. This is the recommended way to run the application.
+`signal-api-receiver` is available as a Docker image on [Docker Hub]. This is the recommended way to run the application.
 
 ```bash
 docker pull kalbasit/signal-api-receiver:latest
@@ -76,7 +76,7 @@ docker run -p 8105:8105 \
 - `-e SIGNAL_ACCOUNT="your_signal_account"`: Sets the `SIGNAL_ACCOUNT` environment variable. Replace with your actual Signal account.
 - `-e SIGNAL_API_URL="wss://your-signal-api-url"`: Sets the `SIGNAL_API_URL` environment variable. Replace with the URL of your Signal API.
 
-Refer to the Docker Hub page for more information and advanced configuration options: https://hub.docker.com/r/kalbasit/signal-api-receiver
+Refer to the [Docker Hub] page for more information.
 
 ### Running from Source
 
@@ -220,3 +220,4 @@ This project is licensed under the MIT License - see the [LICENSE](/LICENSE) fil
 [exec-mode]: https://github.com/bbernhard/signal-cli-rest-api?tab=readme-ov-file#execution-modes
 [signal-cli-rest-api]: https://github.com/bbernhard/signal-cli-rest-api
 [signal_messenger]: https://www.home-assistant.io/integrations/signal_messenger/#sending-messages-to-signal-to-trigger-events
+[Docker Hub]: https://hub.docker.com/r/kalbasit/signal-api-receiver
