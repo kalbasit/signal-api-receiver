@@ -6,8 +6,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"testing"
 
+	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -391,6 +394,100 @@ func TestServerReconnect(t *testing.T) {
 	mc.recvErr <- nil
 
 	assert.Len(t, mc.msgs, 2)
+}
+
+func TestConnectAndReconnect(t *testing.T) {
+	t.Parallel()
+
+	newMessage := func(i int) receiver.Message {
+		message := strconv.Itoa(i)
+
+		return receiver.Message{
+			Envelope: receiver.Envelope{
+				DataMessage: &receiver.DataMessage{
+					Message: &message,
+				},
+			},
+		}
+	}
+
+	var sentC chan struct{}
+
+	ch := make(chan chan receiver.Message, 1)
+	trs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		upgrader := websocket.Upgrader{}
+
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			t.Errorf("upgrade websocket: %v", err)
+
+			return
+		}
+		defer conn.Close()
+
+		messages := <-ch
+		for msg := range messages {
+			if err := conn.WriteJSON(msg); err != nil {
+				t.Errorf("write message: %v", err)
+
+				return
+			}
+		}
+
+		close(sentC)
+	}))
+
+	defer trs.Close()
+
+	uri, err := url.Parse(trs.URL)
+	require.NoError(t, err)
+
+	uri.Scheme = "ws"
+
+	client, err := receiver.New(newContext(), uri, receiver.MessageTypeDataMessage.String())
+	require.NoError(t, err)
+
+	s := server.New(newContext(), client, true)
+
+	tss := httptest.NewServer(s)
+	defer tss.Close()
+
+	for i := 1; i <= 2; i++ {
+		sentC = make(chan struct{})
+		messages := make(chan receiver.Message, 3)
+
+		for j := 1; j <= 3; j++ {
+			messages <- newMessage(i * j)
+		}
+
+		close(messages)
+		ch <- messages
+
+		// wait for the receiver to read all messages
+		<-sentC
+
+		for j := 1; j <= 3; j++ {
+			r, err := http.NewRequestWithContext(newContext(), http.MethodGet, tss.URL+"/receive/pop", nil)
+			require.NoError(t, err)
+
+			resp, err := http.DefaultClient.Do(r)
+			require.NoError(t, err)
+
+			require.Equal(t, http.StatusOK, resp.StatusCode)
+
+			defer func() {
+				//nolint:errcheck
+				io.Copy(io.Discard, resp.Body)
+				resp.Body.Close()
+			}()
+
+			var msg receiver.Message
+
+			require.NoError(t, json.NewDecoder(resp.Body).Decode(&msg))
+
+			assert.Equal(t, strconv.Itoa(i*j), *msg.Envelope.DataMessage.Message)
+		}
+	}
 }
 
 func newContext() context.Context {
