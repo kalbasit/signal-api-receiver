@@ -73,31 +73,6 @@ func (mc *mockClient) Flush() []receiver.Message {
 	return msgs
 }
 
-func TestServerReconnect(t *testing.T) {
-	t.Parallel()
-
-	mc := newMockClient()
-
-	server.New(newContext(), mc, false)
-
-	assert.Zero(t, mc.connectCalled)
-
-	mc.recvMsg <- receiver.Message{Account: "0"}
-
-	mc.recvErr <- nil
-	mc.connectErr <- nil
-
-	assert.Len(t, mc.msgs, 1)
-
-	mc.recvMsg <- receiver.Message{Account: "0"}
-
-	assert.Equal(t, 1, mc.connectCalled)
-
-	mc.recvErr <- nil
-
-	assert.Len(t, mc.msgs, 2)
-}
-
 func TestServeHTTP(t *testing.T) {
 	t.Parallel()
 
@@ -391,6 +366,31 @@ func TestServeHTTP(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestServerReconnect(t *testing.T) {
+	t.Parallel()
+
+	mc := newMockClient()
+
+	server.New(newContext(), mc, false)
+
+	assert.Zero(t, mc.connectCalled)
+
+	mc.recvMsg <- receiver.Message{Account: "0"}
+
+	mc.recvErr <- nil
+	mc.connectErr <- nil
+
+	assert.Len(t, mc.msgs, 1)
+
+	mc.recvMsg <- receiver.Message{Account: "0"}
+
+	assert.Equal(t, 1, mc.connectCalled)
+
+	mc.recvErr <- nil
+
+	assert.Len(t, mc.msgs, 2)
 }
 
 func newContext() context.Context {
