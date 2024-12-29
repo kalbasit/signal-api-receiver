@@ -19,7 +19,10 @@
           config.packages.signal-api-receiver
         ];
         config = {
-          Cmd = [ "/bin/signal-api-receiver" ];
+          Cmd = [
+            "/bin/signal-api-receiver"
+            "serve"
+          ];
           ExposedPorts = {
             "8105/tcp" = { };
           };
