@@ -99,7 +99,7 @@ By default, the server starts on `:8105`. You can change this using the `--serve
 You can see all available options by running:
 
 ```bash
-go run . serve --help
+signal-api-receiver serve --help
 ```
 
 ### Kubernetes Deployment Example
