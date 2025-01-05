@@ -1,9 +1,9 @@
-name: Build and push Docker images
-description: "Build and push Docker images"
+name: Docker metadata
+description: "Create a multi-architecture metadata"
 inputs:
-  system:
-    description: "The system for which to build the docker images for"
-    default: "x86_64-linux"
+  systems:
+    description: "The systems for which to add support for, separated by a comma"
+    required: true
   images:
     description: "List of Docker images to use as base name for tags"
     required: false
@@ -37,33 +37,25 @@ runs:
       with:
         username: ${{ inputs.username }}
         password: ${{ inputs.password }}
-    - name: Install required cross-system tool
-      if: "${{ inputs.system != 'x86_64-linux' }}"
-      run: sudo apt-get install -y qemu-user-static
-      shell: bash
-    - uses: DeterminateSystems/nix-installer-action@v16
-      with:
-        extra-conf: |
-          extra-platforms = ${{ inputs.system }}
-    - uses: DeterminateSystems/magic-nix-cache-action@v8
-    - name: Build the docker image
-      if: ${{ inputs.push }}
-      shell: bash
+    - name: Create a multi-architecture manifest
       env:
-        RELEASE_VERSION: ${{ github.ref_name }}
-      run: |
-        nix build -L --impure .#packages.${{ inputs.system }}.docker
-    - name: Build the docker image pusher
-      if: ${{ inputs.push }}
+        DOCKER_IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
       shell: bash
-      env:
-        RELEASE_VERSION: ${{ github.ref_name }}
       run: |
-        nix build -L --impure .#packages.${{ inputs.system }}.push-docker-image
+        for tag in $DOCKER_IMAGE_TAGS; do
+          imgs=()
+          for system in $( echo "${{ inputs.systems }}" | tr ',' ' ' ); do
+            imgs+=("$tag-$system")
+          done
+
+          docker manifest create $tag ${imgs[*]}
+        done
     - name: Push the docker image
       if: ${{ inputs.push }}
       env:
         DOCKER_IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
       shell: bash
       run: |
-        ./result
+        for tag in $DOCKER_IMAGE_TAGS; do
+          docker push $tag
+        done

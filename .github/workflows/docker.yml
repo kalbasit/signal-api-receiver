@@ -29,3 +29,13 @@ jobs:
           images: kalbasit/signal-api-receiver
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+  docker-manifest:
+    runs-on: ubuntu-24.04
+    needs: docker
+    steps:
+      - uses: ./.github/actions/docker-manifest
+        with:
+          systems: "x86_64-linux,aarch64-linux"
+          images: kalbasit/signal-api-receiver
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}

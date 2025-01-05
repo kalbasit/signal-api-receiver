@@ -45,9 +45,9 @@
         fi
 
         for tag in $DOCKER_IMAGE_TAGS; do
-          echo "Pushing the image: $tag"
+          echo "Pushing the image: $tag for system ${pkgs.hostPlatform.system}"
           ${pkgs.skopeo}/bin/skopeo --insecure-policy copy \
-            "docker-archive:${config.packages.docker}" docker://$tag
+            "docker-archive:${config.packages.docker}" docker://$tag-${pkgs.hostPlatform.system}
         done
       '';
     };
