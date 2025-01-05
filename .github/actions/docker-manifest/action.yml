@@ -1,5 +1,5 @@
-name: Docker metadata
-description: "Create a multi-architecture metadata"
+name: Docker multi-arch manifest
+description: "Create a multi-architecture manifest"
 inputs:
   systems:
     description: "The systems for which to add support for, separated by a comma"
