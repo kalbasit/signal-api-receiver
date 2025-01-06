@@ -96,7 +96,7 @@ jobs:
       - name: Create a multi-architecture manifest
         env:
           DOCKER_IMAGE_TAGS: ${{ needs.docker-meta.outputs.tags }}
-          SYSTEMS: ${{ join(fromJson(inputs.systems), ",") }}
+          SYSTEMS: ${{ join(fromJson(inputs.systems), ',') }}
         shell: bash
         run: |
           for tag in $DOCKER_IMAGE_TAGS; do
