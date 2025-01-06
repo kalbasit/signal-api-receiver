@@ -87,7 +87,7 @@ jobs:
           ./result
   docker-manifest:
     runs-on: ubuntu-24.04
-    needs: docker-images
+    needs: [docker-meta, docker-images]
     steps:
       - name: Create a multi-architecture manifest
         env:
