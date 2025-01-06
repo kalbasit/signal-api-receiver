@@ -1,42 +1,89 @@
-name: Docker images
+name: Build and push Docker images with mult-arch support
+
 on:
-  push:
-    branches:
-      - "main"
+  workflow_call:
+    inputs:
+      systems:
+        description: "The systems for which to add support for, separated by a comma"
+        required: true
+        type: string
+      images:
+        description: "List of Docker images to use as base name for tags"
+        required: false
+        type: string
+      push:
+        description: "Push images to the Docker registry"
+        required: false
+        default: "true"
+        type: string
+      username:
+        description: "Username used to log against the Docker registry"
+        required: true
+        type: string
+    secrets:
+      password:
+        description: "Password or personal access token used to log against the Docker registry"
+        required: true
+
 jobs:
-  flake-check:
+  docker-meta:
     runs-on: ubuntu-24.04
-    permissions:
-      id-token: "write"
-      contents: "read"
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v16
-      - uses: DeterminateSystems/magic-nix-cache-action@v8
-      - uses: DeterminateSystems/flake-checker-action@main
-      - run: nix flake check -L --all-systems
-  docker:
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ inputs.images }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+    outputs:
+      labels: ${{ steps.meta.outputs.labels }}
+      tags: ${{ steps.meta.outputs.tags }}
+
+  docker-images:
     strategy:
       matrix:
-        system: ["x86_64-linux", "aarch64-linux"]
+        system: ${{ split(input.systems, ",") }}
     runs-on: ubuntu-24.04
-    needs: flake-check
+    needs: docker-meta
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/docker
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          system: ${{ matrix.system }}
-          images: kalbasit/signal-api-receiver
-          username: ${{ vars.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-  docker-manifest:
-    runs-on: ubuntu-24.04
-    needs: docker
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/docker-manifest
+          username: ${{ inputs.username }}
+          password: ${{ inputs.password }}
+      - name: Install required cross-system tool
+        if: "${{ matrix.system != 'x86_64-linux' }}"
+        run: sudo apt-get install -y qemu-user-static
+        shell: bash
+      - uses: DeterminateSystems/nix-installer-action@v16
         with:
-          systems: "x86_64-linux,aarch64-linux"
-          images: kalbasit/signal-api-receiver
-          username: ${{ vars.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          extra-conf: |
+            extra-platforms = ${{ matrix.system }}
+      - uses: DeterminateSystems/magic-nix-cache-action@v8
+      - uses: actions/checkout@v4
+      - name: Build the docker image
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          nix build -L --impure .#packages.${{ matrix.system }}.docker
+      - name: Build the docker image pusher
+        if: ${{ inputs.push }}
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          nix build -L --impure .#packages.${{ matrix.system }}.push-docker-image
+      - name: Push the docker image
+        if: ${{ inputs.push }}
+        env:
+          DOCKER_IMAGE_TAGS: ${{ jobs.docker-meta.outputs.tags }}
+        shell: bash
+        run: |
+          ./result
