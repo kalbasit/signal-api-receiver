@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       systems:
-        description: "The systems for which to add support for, separated by a comma"
+        description: "The systems for which to add support for. List in string."
         required: true
         type: string
       images:
@@ -48,7 +48,7 @@ jobs:
   docker-images:
     strategy:
       matrix:
-        system: ${{ split(input.systems, ",") }}
+        system: ${{ input.systems }}
     runs-on: ubuntu-24.04
     needs: docker-meta
     steps:
