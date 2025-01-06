@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       systems:
-        description: "The systems for which to add support for. List in string."
+        description: "The systems for which to add support for. JSON-formatted string."
         required: true
         type: string
       images:
@@ -83,7 +83,7 @@ jobs:
       - name: Push the docker image
         if: ${{ inputs.push }}
         env:
-          DOCKER_IMAGE_TAGS: ${{ needs.docker-meta.outputs.tags }}
+          DOCKER_IMAGE_TAGS: ${{ fromJson(needs.docker-meta.outputs.tags) }}
         shell: bash
         run: |
           ./result
