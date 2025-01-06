@@ -16,27 +16,11 @@ jobs:
       - uses: DeterminateSystems/flake-checker-action@main
       - run: nix flake check -L --all-systems
   docker:
-    strategy:
-      matrix:
-        system: ["x86_64-linux", "aarch64-linux"]
-    runs-on: ubuntu-24.04
+    uses: ./.github/workflows/docker.yml
     needs: flake-check
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/docker
-        with:
-          system: ${{ matrix.system }}
-          images: kalbasit/signal-api-receiver
-          username: ${{ vars.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-  docker-manifest:
-    runs-on: ubuntu-24.04
-    needs: docker
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/docker-manifest
-        with:
-          systems: "x86_64-linux,aarch64-linux"
-          images: kalbasit/signal-api-receiver
-          username: ${{ vars.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+    with:
+      systems: "['x86_64-linux', 'aarch64-linux']"
+      images: kalbasit/signal-api-receiver
+      username: ${{ vars.DOCKERHUB_USERNAME }}
+    secrets:
+      password: ${{ secrets.DOCKERHUB_TOKEN }}
