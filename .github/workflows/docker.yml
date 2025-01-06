@@ -48,7 +48,7 @@ jobs:
   docker-images:
     strategy:
       matrix:
-        system: ${{ input.systems }}
+        system: ${{ inputs.systems }}
     runs-on: ubuntu-24.04
     needs: docker-meta
     steps:
