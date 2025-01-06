@@ -49,11 +49,6 @@ jobs:
     runs-on: ubuntu-24.04
     needs: docker-meta
     steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ inputs.username }}
-          password: ${{ secrets.password }}
       - name: Install required cross-system tool
         if: "${{ matrix.system != 'x86_64-linux' }}"
         run: sudo apt-get install -y qemu-user-static
@@ -70,6 +65,12 @@ jobs:
           RELEASE_VERSION: ${{ github.ref_name }}
         run: |
           nix build -L --impure .#packages.${{ matrix.system }}.docker
+      - name: Login to Docker Hub
+        if: ${{ inputs.push }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ inputs.username }}
+          password: ${{ secrets.password }}
       - name: Build the docker image pusher
         if: ${{ inputs.push }}
         shell: bash
@@ -88,11 +89,6 @@ jobs:
     runs-on: ubuntu-24.04
     needs: docker-images
     steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ inputs.username }}
-          password: ${{ secrets.password }}
       - name: Create a multi-architecture manifest
         env:
           DOCKER_IMAGE_TAGS: ${{ needs.docker-meta.outputs.tags }}
@@ -107,6 +103,12 @@ jobs:
 
             docker manifest create $tag ${imgs[*]}
           done
+      - name: Login to Docker Hub
+        if: ${{ inputs.push }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ inputs.username }}
+          password: ${{ secrets.password }}
       - name: Push the docker image
         if: ${{ inputs.push }}
         env:
