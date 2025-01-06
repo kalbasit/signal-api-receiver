@@ -1,5 +1,4 @@
 name: Build and push Docker images with mult-arch support
-
 on:
   workflow_call:
     inputs:
@@ -24,7 +23,6 @@ on:
       password:
         description: "Password or personal access token used to log against the Docker registry"
         required: true
-
 jobs:
   docker-meta:
     runs-on: ubuntu-24.04
@@ -44,7 +42,6 @@ jobs:
     outputs:
       labels: ${{ steps.meta.outputs.labels }}
       tags: ${{ steps.meta.outputs.tags }}
-
   docker-images:
     strategy:
       matrix:
@@ -87,7 +84,6 @@ jobs:
         shell: bash
         run: |
           ./result
-
   docker-manifest:
     runs-on: ubuntu-24.04
     needs: docker-images
