@@ -96,11 +96,12 @@ jobs:
       - name: Create a multi-architecture manifest
         env:
           DOCKER_IMAGE_TAGS: ${{ needs.docker-meta.outputs.tags }}
+          SYSTEMS: ${{ join(fromJson(inputs.systems), ",") }}
         shell: bash
         run: |
           for tag in $DOCKER_IMAGE_TAGS; do
             imgs=()
-            for system in $( echo "${{ inputs.systems }}" | tr ',' ' ' ); do
+            for system in $( echo "$SYSTEMS" | tr ',' ' ' ); do
               imgs+=("$tag-$system")
             done
 
