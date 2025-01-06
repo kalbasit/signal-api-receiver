@@ -83,7 +83,7 @@ jobs:
       - name: Push the docker image
         if: ${{ inputs.push }}
         env:
-          DOCKER_IMAGE_TAGS: ${{ jobs.docker-meta.outputs.tags }}
+          DOCKER_IMAGE_TAGS: ${{ needs.docker-meta.outputs.tags }}
         shell: bash
         run: |
           ./result
