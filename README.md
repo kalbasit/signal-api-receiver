@@ -94,7 +94,13 @@ To run `signal-api-receiver` from source, you need to provide the following comm
 - `--signal-api-url <value>`: **Required.** Specifies the URL of your Signal API, including the scheme (e.g., `wss://signal-api.example.com`). Can be set using the `$SIGNAL_API_URL` environment variable.
 - `--server-addr <value>`: Sets the address where the server will listen (default: ":8105"). Can be set using the `$SERVER_ADDR` environment variable.
 
-By default, the server starts on `:8105`. You can change this using the `--server-addr` flag (e.g., `--server-addr :8080`).
+- `--mqtt-server <value>`: Server address to your MQTT Broker (e.g., `mqtt://broker.srv.local:1883`). Can be set using the `$MQTT_SERVER` environment variable.
+- `--mqtt-user <value>` User used for authentication . Can be set using the `$MQTT_USER` environment variable.
+- `--mqtt-password <value>` Password of the user used for authentication. Can be set using the `$MQTT_PASSWORD` environment variable. 
+- `--mqtt-client-id <value>`: A custom client-id. This should be unique. (default: `signal-api-receiver-<mac-address>`) Can be set using the `$MQTT_CLIENT_ID` environment variable.
+- `--mqtt-topic-prefix <value>`: A custom topic prefix to broadcast (default: `signal-api-receiver`). Topic resolves to `<topic-prefix>/message`. Can be set using the `$MQTT_TOPIC_PREFIX` environment variable.
+- `--mqtt-qos` Change the quality of service. Possible options are `1`, `2`, `3`. Can be set using the `MQTT_QOS` environment variable.
+
 
 You can see all available options by running:
 
