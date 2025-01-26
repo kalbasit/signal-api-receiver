@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"sync"
@@ -24,17 +25,24 @@ type Client struct {
 
 	mu       sync.Mutex
 	messages []Message
+
+	MessageNotifier *MessageNotifier
+	notifierTrigger MessageNotifierTrigger
 }
 
 // New creates a new Signal API client and returns it.
 // An error is returned if a websocket fails to open with the Signal's API
 // /v1/receive.
 func New(ctx context.Context, uri *url.URL, messageTypes ...string) (*Client, error) {
+	notifier, notifierTrigger := InitNotifier(ctx)
+
 	c := &Client{
 		uri:                      uri,
 		logger:                   *zerolog.Ctx(ctx),
 		recordedMessageTypesStrs: messageTypes,
 		recordedMessageTypes:     make(map[MessageType]bool),
+		MessageNotifier:          notifier,
+		notifierTrigger:          notifierTrigger,
 	}
 
 	for _, mts := range messageTypes {
@@ -70,7 +78,7 @@ func (c *Client) Connect() error {
 // ReceiveLoop is a blocking call and it loop over receiving messages over the
 // websocket and record them internally to be consumed by either Pop() or
 // Flush().
-func (c *Client) ReceiveLoop() error {
+func (c *Client) ReceiveLoop(ctx context.Context) error {
 	log := c.logger.With().Str("func", "ReceiveLoop").Logger()
 
 	log.
@@ -86,7 +94,7 @@ func (c *Client) ReceiveLoop() error {
 			return err
 		}
 
-		c.recordMessage(msg)
+		c.recordMessage(ctx, msg)
 	}
 }
 
@@ -115,7 +123,12 @@ func (c *Client) Pop() *Message {
 	return &msg
 }
 
-func (c *Client) recordMessage(msg []byte) {
+// LocalAddr returns connection local address.
+func (c *Client) LocalAddr() *net.TCPAddr {
+	return c.conn.LocalAddr().(*net.TCPAddr)
+}
+
+func (c *Client) recordMessage(ctx context.Context, msg []byte) {
 	var m Message
 	if err := json.Unmarshal(msg, &m); err != nil {
 		c.logger.
@@ -148,6 +161,11 @@ func (c *Client) recordMessage(msg []byte) {
 	c.mu.Lock()
 	c.messages = append(c.messages, m)
 	c.mu.Unlock()
+
+	err := c.notifierTrigger(ctx, MessageNotifierPayload{Message: m})
+	if err != nil {
+		c.logger.Error().Err(err).Msg("error while handling new-message")
+	}
 
 	//nolint:zerologlint
 	if c.logger.Debug().Enabled() {

@@ -89,12 +89,26 @@ To run `signal-api-receiver` from source, you need to provide the following comm
 **Options for the `serve` command:**
 
 - `--record-message-type <value>`: Specifies which message types to record. Valid types are: "receipt", "typing", "data", "data-message", and "sync". This flag can be repeated to record multiple types (default: "data-message").
+
 - `--repeat-last-message`: If enabled, repeats the last message if no new messages are available (applies to `/receive/pop`). This can be set using the `$REPEAT_LAST_MESSAGE` environment variable (default: false).
+
 - `--signal-account <value>`: **Required.** Specifies your Signal account number. Can be set using the `$SIGNAL_ACCOUNT` environment variable.
+
 - `--signal-api-url <value>`: **Required.** Specifies the URL of your Signal API, including the scheme (e.g., `wss://signal-api.example.com`). Can be set using the `$SIGNAL_API_URL` environment variable.
+
 - `--server-addr <value>`: Sets the address where the server will listen (default: ":8105"). Can be set using the `$SERVER_ADDR` environment variable.
 
-By default, the server starts on `:8105`. You can change this using the `--server-addr` flag (e.g., `--server-addr :8080`).
+- `--mqtt-server <value>`: Server address to your MQTT Broker (must include the port e.g., `mqtt://broker.srv.local:1883`). Can be set using the `$MQTT_SERVER` environment variable.
+
+- `--mqtt-user <value>` User used for authentication. Can be set using the `$MQTT_USER` environment variable.
+
+- `--mqtt-password <value>` Password of the user used for authentication. Can be set using the `$MQTT_PASSWORD` environment variable.
+
+- `--mqtt-client-id <value>`: A custom client-id. This should be unique on your broker. (default: `signal-api-receiver-<mac-address>`) Can be set using the `$MQTT_CLIENT_ID` environment variable.
+
+- `--mqtt-topic-prefix <value>`: Define a custom topic-prefix to publish messages (default: `signal-api-receiver`). Topic resolves to `<topic-prefix>/message`. Can be set using the `$MQTT_TOPIC_PREFIX` environment variable.
+
+- `--mqtt-qos <value>` Change the quality of service. Possible options are `0`, `1`, `2`. Can be set using the `MQTT_QOS` environment variable.
 
 You can see all available options by running:
 
