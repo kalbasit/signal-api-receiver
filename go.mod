@@ -5,7 +5,7 @@ go 1.23.3
 require (
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/rs/zerolog v1.33.0
+	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.0.0-beta1
 	go.uber.org/automaxprocs v1.6.0
