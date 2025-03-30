@@ -4,15 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/kalbasit/signal-api-receiver/pkg/mqtt"
 	"github.com/kalbasit/signal-api-receiver/pkg/receiver"
 	"github.com/kalbasit/signal-api-receiver/pkg/server"
 )
@@ -28,7 +32,21 @@ var (
 	accountRegex = regexp.MustCompile(`^\+[0-9]+$`)
 )
 
+func makeRandomClientId() string {
+	netInterfaces, err := net.Interfaces()
+
+	parts := []string{"signal-api-receiver"}
+
+	if err == nil {
+		parts = append(parts, strings.ReplaceAll(netInterfaces[0].HardwareAddr.String(), ":", ""))
+	}
+
+	return strings.Join(parts, "-")
+}
+
 func serveCommand() *cli.Command {
+	randomClientId := makeRandomClientId()
+
 	return &cli.Command{
 		Name:    "serve",
 		Aliases: []string{"s"},
@@ -100,6 +118,48 @@ func serveCommand() *cli.Command {
 				Sources: cli.EnvVars("SERVER_ADDR"),
 				Value:   ":8105",
 			},
+			&cli.StringFlag{
+				Name:    "mqtt-server",
+				Usage:   "MQTT Server Host and Port",
+				Sources: cli.EnvVars("MQTT_PASSWORD"),
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-client-id",
+				Usage:   "MQTT Client ID",
+				Sources: cli.EnvVars("MQTT_CLIENT_ID"),
+				Value:   randomClientId,
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-user",
+				Usage:   "MQTT Username",
+				Sources: cli.EnvVars("MQTT_USER"),
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-password",
+				Usage:   "MQTT Password",
+				Sources: cli.EnvVars("MQTT_PASSWORD"),
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-topic-prefix",
+				Usage:   "MQTT Topic Prefix. {topic-prefix}/message",
+				Sources: cli.EnvVars("MQTT_TOPIC_PREFIX"),
+				Value:   "signal-api-receiver",
+			},
+			&cli.IntFlag{
+				Name:    "mqtt-qos",
+				Usage:   "MQTT Quality of Service value",
+				Sources: cli.EnvVars("MQTT_QOS"),
+				Value:   1,
+				Validator: func(q int64) error {
+					allowedValues := []int64{1, 2, 3}
+
+					if !slices.Contains(allowedValues, q) {
+						return fmt.Errorf("cannot parse qos %q", q)
+					}
+
+					return nil
+				},
+			},
 		},
 	}
 }
@@ -144,6 +204,22 @@ func serveAction() cli.ActionFunc {
 		sarc, err := receiver.New(ctx, uri, cmd.StringSlice("record-message-type")...)
 		if err != nil {
 			return fmt.Errorf("error creating a new receiver: %w", err)
+		}
+
+		if cmd.IsSet("mqtt-server") {
+			err := mqtt.Init(
+				ctx,
+				cmd.String("mqtt-server"),
+				cmd.String("mqtt-client-id"),
+				cmd.String("mqtt-user"),
+				cmd.String("mqtt-password"),
+				cmd.String("mqtt-topic-prefix"),
+				cmd.Int("mqtt-qos"),
+			)
+
+			if err != nil {
+				return fmt.Errorf("error initializing mqtt: %w", err)
+			}
 		}
 
 		srv := server.New(ctx, sarc, cmd.Bool("repeat-last-message"))

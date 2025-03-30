@@ -149,6 +149,10 @@ func (c *Client) recordMessage(msg []byte) {
 	c.messages = append(c.messages, m)
 	c.mu.Unlock()
 
+	NewMessage.Trigger(NewMessagePayload{
+		Message: m,
+	})
+
 	//nolint:zerologlint
 	if c.logger.Debug().Enabled() {
 		c.logger.
