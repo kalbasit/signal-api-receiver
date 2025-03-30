@@ -7,9 +7,6 @@ on:
 jobs:
   update-vendor-hash:
     runs-on: ubuntu-24.04
-    permissions:
-      id-token: "write"
-      contents: "write"
     steps:
       - uses: actions/checkout@v4
         with:
