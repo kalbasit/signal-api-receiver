@@ -12,6 +12,8 @@ jobs:
       contents: "read"
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: DeterminateSystems/nix-installer-action@v16
       - uses: DeterminateSystems/magic-nix-cache-action@v9
       - run: |
@@ -20,9 +22,11 @@ jobs:
           fi
 
           hash="$(grep 'got:' /tmp/log | awk '{print $2}')"
+          echo "hash=$hash"
 
           sed -e "s#vendorHash =.*\$#vendorHash = \"$hash\";#g" -i nix/packages/signal-api-receiver.nix
+
+          git diff
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto Update Vendor Hash"
-          token: ${{ secrets.GITHUB_TOKEN }}
