@@ -1,9 +1,11 @@
 name: Auto Update Vendor Hash
 on:
   pull_request:
+    paths:
+      - "go.mod"
+      - "go.sum"
 jobs:
   update-vendor-hash:
-    if: github.event.pull_request.user.login == 'renovate[bot]'
     runs-on: ubuntu-24.04
     permissions:
       id-token: "write"
