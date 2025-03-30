@@ -15,8 +15,7 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@v16
       - uses: DeterminateSystems/magic-nix-cache-action@v9
       - run: |
-          nix build --print-build-logs .#signal-api-receiver 2> /tmp/log
-          if [ $? -eq 0 ]; then
+          if nix build --print-build-logs .#signal-api-receiver 2> /tmp/log; then
             exit 0
           fi
 
