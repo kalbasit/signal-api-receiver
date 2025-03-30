@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       id-token: "write"
-      contents: "read"
+      contents: "write"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,7 +17,7 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@v16
       - uses: DeterminateSystems/magic-nix-cache-action@v9
       - run: |
-          if nix build --print-build-logs .#signal-api-receiver 2> /tmp/log; then
+          if nix build --print-build-logs .#signal-api-receiver 2>&1 | tee /tmp/log; then
             exit 0
           fi
 
