@@ -1,0 +1,27 @@
+name: Auto Update Vendor Hash
+on:
+  pull_request:
+jobs:
+  update-vendor-hash:
+    if: github.event.pull_request.user.login == 'renovate[bot]'
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: "write"
+      contents: "read"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v16
+      - uses: DeterminateSystems/magic-nix-cache-action@v9
+      - run: |
+          nix build --print-build-logs .#signal-api-receiver 2> /tmp/log
+          if [ $? -eq 0 ]; then
+            exit 0
+          fi
+
+          hash="$(grep 'got:' /tmp/log | awk '{print $2}')"
+
+          sed -e "s#vendorHash =.*\$#vendorHash = \"$hash\";#g" -i nix/packages/signal-api-receiver.nix
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto Update Vendor Hash"
+          token: ${{ secrets.GITHUB_TOKEN }}
