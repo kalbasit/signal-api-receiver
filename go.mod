@@ -3,7 +3,7 @@ module github.com/kalbasit/signal-api-receiver
 go 1.24.3
 
 require (
-	github.com/go-chi/chi/v5 v5.2.2
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/gorilla/websocket v1.5.3
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.11.1
