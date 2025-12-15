@@ -26,6 +26,6 @@ jobs:
           sed -e "s#vendorHash =.*\$#vendorHash = \"$hash\";#g" -i nix/packages/signal-api-receiver.nix
 
           git diff
-      - uses: stefanzweifel/git-auto-commit-action@v6
+      - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "Auto Update Vendor Hash"
