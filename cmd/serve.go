@@ -2,33 +2,46 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/kalbasit/signal-api-receiver/pkg/receiver"
-	"github.com/kalbasit/signal-api-receiver/pkg/server"
+	"github.com/leptoquark1/signal-api-receiver/pkg/errors"
+	"github.com/leptoquark1/signal-api-receiver/pkg/mqtt"
+	"github.com/leptoquark1/signal-api-receiver/pkg/receiver"
+	"github.com/leptoquark1/signal-api-receiver/pkg/server"
 )
 
 var (
-	// ErrInvalidSignalAccount is retruned if the given signal-account is not valid.
-	ErrInvalidSignalAccount = errors.New("invalid signal account")
-
-	// ErrSchemeMissing is returned if the given signal-api-url is missing a scheme.
-	ErrSchemeMissing = errors.New("scheme is missing")
-
 	// https://regex101.com/r/sxO3RG/1
-	accountRegex = regexp.MustCompile(`^\+[0-9]+$`)
+	accountRegex     = regexp.MustCompile(`^\+[0-9]+$`)
+	allowedQosValues = []int{0, 1, 2}
 )
 
+func makeRandomClientID() string {
+
+	parts := []string{"signal-api-receiver"}
+
+	netInterfaces, err := net.Interfaces()
+	if err == nil {
+		parts = append(parts, strings.ReplaceAll(netInterfaces[0].HardwareAddr.String(), ":", ""))
+	}
+
+	return strings.Join(parts, "-")
+}
+
 func serveCommand() *cli.Command {
+	randomClientID := makeRandomClientID()
+
 	return &cli.Command{
 		Name:    "serve",
 		Aliases: []string{"s"},
@@ -48,7 +61,7 @@ func serveCommand() *cli.Command {
 					for _, mt := range mts {
 						_, err := receiver.ParseMessageType(mt)
 						if err != nil {
-							return fmt.Errorf("could not parse message type %q: %w", mt, err)
+							return errors.MessageTypeParseFormatError(mt, err)
 						}
 					}
 
@@ -67,10 +80,7 @@ func serveCommand() *cli.Command {
 				Required: true,
 				Validator: func(a string) error {
 					if !accountRegex.MatchString(a) {
-						return fmt.Errorf(
-							"%w: phone number must have leading + followed only by numbers",
-							ErrInvalidSignalAccount,
-						)
+						return errors.InvalidSignalAccountError()
 					}
 
 					return nil
@@ -88,7 +98,7 @@ func serveCommand() *cli.Command {
 					}
 
 					if uri.Scheme == "" {
-						return ErrSchemeMissing
+						return errors.ErrSchemeMissing
 					}
 
 					return nil
@@ -99,6 +109,48 @@ func serveCommand() *cli.Command {
 				Usage:   "The address of the server",
 				Sources: cli.EnvVars("SERVER_ADDR"),
 				Value:   ":8105",
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-server",
+				Usage:   "MQTT Server Host and Port",
+				Sources: cli.EnvVars("MQTT_PASSWORD"),
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-client-id",
+				Usage:   "MQTT Client ID",
+				Sources: cli.EnvVars("MQTT_CLIENT_ID"),
+				Value:   randomClientID,
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-user",
+				Usage:   "MQTT Username",
+				Sources: cli.EnvVars("MQTT_USER"),
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-password",
+				Usage:   "MQTT Password",
+				Sources: cli.EnvVars("MQTT_PASSWORD"),
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-topic-prefix",
+				Usage:   "MQTT Topic Prefix. {topic-prefix}/message",
+				Sources: cli.EnvVars("MQTT_TOPIC_PREFIX"),
+				Value:   "signal-api-receiver",
+			},
+			&cli.IntFlag{
+				Name:    "mqtt-qos",
+				Usage:   "MQTT Quality of Service (QoS) value",
+				Sources: cli.EnvVars("MQTT_QOS"),
+				Value:   1,
+				Validator: func(q int) error {
+					allowedValues := []int{1, 2, 3}
+
+					if !slices.Contains(allowedValues, q) {
+						return errors.MqttQosValueNotAllowedError(q, allowedQosValues)
+					}
+
+					return nil
+				},
 			},
 		},
 	}
@@ -132,7 +184,7 @@ func serveAction() cli.ActionFunc {
 
 		uri, err := url.Parse(signalAPIURL)
 		if err != nil {
-			return fmt.Errorf("error parsing the url %q: %w", signalAPIURL, err)
+			return errors.SignalURLParseError(signalAPIURL, err)
 		}
 
 		uri = uri.JoinPath(fmt.Sprintf("/v1/receive/%s", cmd.String("signal-account")))
@@ -143,7 +195,23 @@ func serveAction() cli.ActionFunc {
 
 		sarc, err := receiver.New(ctx, uri, cmd.StringSlice("record-message-type")...)
 		if err != nil {
-			return fmt.Errorf("error creating a new receiver: %w", err)
+			return errors.ReceiverCreateError(err)
+		}
+
+		if cmd.IsSet("mqtt-server") {
+			err := mqtt.Init(
+				ctx,
+				cmd.String("mqtt-server"),
+				cmd.String("mqtt-client-id"),
+				cmd.String("mqtt-user"),
+				cmd.String("mqtt-password"),
+				cmd.String("mqtt-topic-prefix"),
+				cmd.Int("mqtt-qos"),
+			)
+
+			if err != nil {
+				return errors.MqttInitError(err)
+			}
 		}
 
 		srv := server.New(ctx, sarc, cmd.Bool("repeat-last-message"))
@@ -159,7 +227,7 @@ func serveAction() cli.ActionFunc {
 			Msg("Server started")
 
 		if err := server.ListenAndServe(); err != nil {
-			return fmt.Errorf("error starting the HTTP listener: %w", err)
+			return errors.HttpListenerStartError(err)
 		}
 
 		return nil

@@ -3,12 +3,12 @@ package receiver
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/leptoquark1/signal-api-receiver/pkg/errors"
 	"github.com/rs/zerolog"
 )
 
@@ -40,7 +40,7 @@ func New(ctx context.Context, uri *url.URL, messageTypes ...string) (*Client, er
 	for _, mts := range messageTypes {
 		mt, err := ParseMessageType(mts)
 		if err != nil {
-			return nil, fmt.Errorf("could not parse message type %q: %w", mts, err)
+			return nil, errors.MessageParseError(mts, err)
 		}
 
 		c.recordedMessageTypes[mt] = true
@@ -59,7 +59,7 @@ func (c *Client) Connect() error {
 
 	conn, _, err := websocket.DefaultDialer.Dial(c.uri.String(), http.Header{})
 	if err != nil {
-		return fmt.Errorf("error creating a new websocket connetion: %w", err)
+		return errors.WebSocketConnectionError(err)
 	}
 
 	c.conn = conn
@@ -148,6 +148,10 @@ func (c *Client) recordMessage(msg []byte) {
 	c.mu.Lock()
 	c.messages = append(c.messages, m)
 	c.mu.Unlock()
+
+	NewMessage.Trigger(NewMessagePayload{
+		Message: m,
+	})
 
 	//nolint:zerologlint
 	if c.logger.Debug().Enabled() {

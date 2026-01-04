@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/kalbasit/signal-api-receiver/pkg/receiver"
+	"github.com/leptoquark1/signal-api-receiver/pkg/receiver"
 )
 
 func TestMessageType(t *testing.T) {

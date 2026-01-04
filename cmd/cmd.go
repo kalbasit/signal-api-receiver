@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"time"
 
+	"github.com/leptoquark1/signal-api-receiver/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/term"
@@ -47,7 +47,7 @@ func beforeFunc(ctx context.Context, cmd *cli.Command) (context.Context, error) 
 
 	lvl, err := zerolog.ParseLevel(logLvl)
 	if err != nil {
-		return ctx, fmt.Errorf("error parsing the log-level %q: %w", logLvl, err)
+		return ctx, errors.LogLevelFormatError(logLvl)
 	}
 
 	var output io.Writer = os.Stdout

@@ -32,20 +32,20 @@
           CGO_ENABLED = 0;
 
           ldflags = [
-            "-X github.com/kalbasit/signal-api-receiver/cmd.Version=${version}"
+            "-X github.com/leptoquark1/signal-api-receiver/cmd.Version=${version}"
           ];
 
           subPackages = [ "." ];
 
-          vendorHash = "sha256-4RnsNH5zmGOedZy0N6N0l74eVzZCRXLE79uPmL6yBcs=";
+          vendorHash = "sha256-Uo2/bkBPHatbNCC90U3uKZ2n5XFFpO4dM/M1EGg0HRE=";
 
           doCheck = true;
 
           meta = {
             description = "Signal API receiver";
-            homepage = "https://github.com/kalbasit/signal-api-receiver";
+            homepage = "https://github.com/leptoquark1/signal-api-receiver";
             license = lib.licenses.mit;
-            maintainers = [ lib.maintainers.kalbasit ];
+            maintainers = [ lib.maintainers.leptoquark1 ];
           };
         };
 

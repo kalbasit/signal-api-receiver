@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kalbasit/signal-api-receiver/pkg/receiver"
-	"github.com/kalbasit/signal-api-receiver/pkg/server"
+	"github.com/leptoquark1/signal-api-receiver/pkg/receiver"
+	"github.com/leptoquark1/signal-api-receiver/pkg/server"
 )
 
 type mockClient struct {

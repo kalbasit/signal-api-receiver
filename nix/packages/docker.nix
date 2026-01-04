@@ -7,7 +7,7 @@
     }:
     {
       packages.docker = pkgs.dockerTools.buildLayeredImage {
-        name = "kalbasit/signal-api-receiver";
+        name = "leptoquark1/signal-api-receiver";
         contents = [
           # required for TLS certificate validation
           pkgs.cacert
@@ -29,9 +29,9 @@
           Labels = {
             "org.opencontainers.image.description" = "Signal API Receiver";
             "org.opencontainers.image.licenses" = "MIT";
-            "org.opencontainers.image.source" = "https://github.com/kalbasit/signal-api-receiver";
+            "org.opencontainers.image.source" = "https://github.com/leptoquark1/signal-api-receiver";
             "org.opencontainers.image.title" = "signal-api-receiver";
-            "org.opencontainers.image.url" = "https://github.com/kalbasit/signal-api-receiver";
+            "org.opencontainers.image.url" = "https://github.com/leptoquark1/signal-api-receiver";
           };
         };
       };

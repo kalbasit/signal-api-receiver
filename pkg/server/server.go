@@ -11,7 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog"
 
-	"github.com/kalbasit/signal-api-receiver/pkg/receiver"
+	"github.com/leptoquark1/signal-api-receiver/pkg/receiver"
 )
 
 const (

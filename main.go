@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/kalbasit/signal-api-receiver/cmd"
+	"github.com/leptoquark1/signal-api-receiver/cmd"
 )
 
 func main() {

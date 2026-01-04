@@ -202,3 +202,23 @@ func (m Message) MessageTypesStrings() []string {
 
 	return ss
 }
+
+var NewMessage newMessage
+
+type NewMessagePayload struct {
+	Message Message
+}
+
+type newMessage struct {
+	handlers []interface{ Handle(NewMessagePayload) }
+}
+
+func (u *newMessage) Register(handler interface{ Handle(NewMessagePayload) }) {
+	u.handlers = append(u.handlers, handler)
+}
+
+func (u newMessage) Trigger(payload NewMessagePayload) {
+	for _, handler := range u.handlers {
+		go handler.Handle(payload)
+	}
+}
