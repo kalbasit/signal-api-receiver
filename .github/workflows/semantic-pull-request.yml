@@ -6,6 +6,9 @@ on:
       - edited
       - synchronize
       - reopened
+    branches:
+      - main
+      - "release-*"
 permissions:
   pull-requests: read
 jobs:

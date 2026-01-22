@@ -1,4 +1,7 @@
 name: Build and push Docker images with mult-arch support
+permissions:
+  contents: read
+  packages: write
 on:
   workflow_call:
     inputs:
@@ -14,10 +17,21 @@ on:
         description: "Username used to log against the Docker registry"
         required: true
         type: string
+      push_images:
+        description: "Should the job push the image to Dockerhub?"
+        required: true
+        type: boolean
     secrets:
       password:
         description: "Password or personal access token used to log against the Docker registry"
         required: true
+    outputs:
+      tags:
+        description: "The generated Docker tags"
+        value: ${{ jobs.docker-meta.outputs.tags }}
+      labels:
+        description: "The generated Docker labels"
+        value: ${{ jobs.docker-meta.outputs.labels }}
 jobs:
   docker-meta:
     runs-on: ubuntu-24.04
@@ -26,13 +40,16 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ inputs.images }}
+          images: |
+            ${{ inputs.images }}
+            ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=semver,pattern={{raw}}
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
             type=sha
     outputs:
       labels: ${{ steps.meta.outputs.labels }}
@@ -41,43 +58,49 @@ jobs:
     strategy:
       matrix:
         system: ${{ fromJson(inputs.systems) }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.system == 'aarch64-linux' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     needs: docker-meta
     steps:
-      - name: Install required cross-system tool
-        if: "${{ matrix.system != 'x86_64-linux' }}"
-        run: sudo apt-get install -y qemu-user-static
-        shell: bash
       - uses: DeterminateSystems/nix-installer-action@v21
-        with:
-          extra-conf: |
-            extra-platforms = ${{ matrix.system }}
       - uses: DeterminateSystems/magic-nix-cache-action@v13
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ inputs.username }}
-          password: ${{ secrets.password }}
       - uses: actions/checkout@v6
       - name: Build the docker image
         shell: bash
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
         run: |
+          set -euo pipefail
           nix build -L --impure .#packages.${{ matrix.system }}.docker
       - name: Build the docker image pusher
         shell: bash
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
         run: |
+          set -euo pipefail
           nix build -L --impure .#packages.${{ matrix.system }}.push-docker-image
+      - name: Login to Docker Hub
+        if: inputs.push_images
+        uses: docker/login-action@v3
+        with:
+          username: ${{ inputs.username }}
+          password: ${{ secrets.password }}
+      - name: Login to GitHub Container Registry
+        if: inputs.push_images
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push the docker image
+        if: inputs.push_images
         env:
           DOCKER_IMAGE_TAGS: ${{ needs.docker-meta.outputs.tags }}
         shell: bash
         run: |
-          ./result
+          set -euo pipefail
+          ./result/bin/push-docker-image
   docker-manifest:
+    if: inputs.push_images
     runs-on: ubuntu-24.04
     needs: [docker-meta, docker-images]
     steps:
@@ -86,6 +109,12 @@ jobs:
         with:
           username: ${{ inputs.username }}
           password: ${{ secrets.password }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Create a multi-architecture manifest
         env:
           DOCKER_IMAGE_TAGS: ${{ needs.docker-meta.outputs.tags }}
