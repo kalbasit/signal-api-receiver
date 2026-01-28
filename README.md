@@ -110,6 +110,8 @@ To run `signal-api-receiver` from source, you need to provide the following comm
 
 - `--mqtt-qos <value>` Change the quality of service. Possible options are `0`, `1`, `2`. Can be set using the `MQTT_QOS` environment variable.
 
+- `--mqtt-validate-certificate <value>` Whether the client verifies the certificate chain and hostname of the server when using a TLS connection (`mqtts://`). Can be set using the `MQTT_VALIDATE_CERTIFICATE` environment variable.
+
 > Only compatible with **MQTT v5** brokers
 
 You can see all available options by running:
