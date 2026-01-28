@@ -162,7 +162,7 @@ func (m handlerOpt) Handle(ctx context.Context, messagePayload receiver.MessageN
 		publishPayload{Message: &messagePayload.Message, Types: messagePayload.Message.MessageTypesStrings()},
 	)
 	if err != nil {
-m.Logger.Error().Err(err).Msg("MQTT: Error while marshaling message")
+		m.Logger.Error().Err(err).Msg("MQTT: Error while marshaling message")
 
 		return err
 	}
