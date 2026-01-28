@@ -47,7 +47,7 @@ func (mc *mockClient) Connect() error {
 	return nil
 }
 
-func (mc *mockClient) ReceiveLoop() error {
+func (mc *mockClient) ReceiveLoop(_ context.Context) error {
 	for {
 		select {
 		case msg := <-mc.recvMsg:

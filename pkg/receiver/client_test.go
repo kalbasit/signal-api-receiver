@@ -138,7 +138,7 @@ func TestRecordMessageTypes(t *testing.T) {
 	go func(t *testing.T) {
 		t.Helper()
 
-		assert.NoError(t, client.ReceiveLoop())
+		assert.NoError(t, client.ReceiveLoop(t.Context()))
 	}(t)
 
 	var (

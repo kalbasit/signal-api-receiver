@@ -7,18 +7,20 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/kalbasit/signal-api-receiver/pkg/mqtt"
 	"github.com/kalbasit/signal-api-receiver/pkg/receiver"
 	"github.com/kalbasit/signal-api-receiver/pkg/server"
 )
 
 var (
-	// ErrInvalidSignalAccount is retruned if the given signal-account is not valid.
+	// ErrInvalidSignalAccount is returned if the given signal-account is not valid.
 	ErrInvalidSignalAccount = errors.New("invalid signal account")
 
 	// ErrSchemeMissing is returned if the given signal-api-url is missing a scheme.
@@ -26,6 +28,12 @@ var (
 
 	// https://regex101.com/r/sxO3RG/1
 	accountRegex = regexp.MustCompile(`^\+[0-9]+$`)
+
+	// ErrMqttQosValueNotAllowed is returned if the given mqtt-qos is not valid.
+	ErrMqttQosValueNotAllowed = errors.New("mqtt-qos value is not allowed")
+
+	// ErrMqttInitError is returned if there was an error initializing the mqtt client.
+	ErrMqttInitError = errors.New("mqtt initialization error")
 )
 
 func serveCommand() *cli.Command {
@@ -100,6 +108,50 @@ func serveCommand() *cli.Command {
 				Sources: cli.EnvVars("SERVER_ADDR"),
 				Value:   ":8105",
 			},
+			&cli.StringFlag{
+				Name:    "mqtt-server",
+				Usage:   "MQTT Server Host and Port",
+				Sources: cli.EnvVars("MQTT_SERVER"),
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-client-id",
+				Usage:   "MQTT Client ID",
+				Sources: cli.EnvVars("MQTT_CLIENT_ID"),
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-user",
+				Usage:   "MQTT Username",
+				Sources: cli.EnvVars("MQTT_USER"),
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-password",
+				Usage:   "MQTT Password",
+				Sources: cli.EnvVars("MQTT_PASSWORD"),
+			},
+			&cli.StringFlag{
+				Name:    "mqtt-topic-prefix",
+				Usage:   "MQTT Topic Prefix. {topic-prefix}/message",
+				Sources: cli.EnvVars("MQTT_TOPIC_PREFIX"),
+				Value:   "signal-api-receiver",
+			},
+			&cli.IntFlag{
+				Name:    "mqtt-qos",
+				Usage:   "MQTT Quality of Service (QoS) value",
+				Sources: cli.EnvVars("MQTT_QOS"),
+				Value:   1,
+				Validator: func(q int) error {
+					if !slices.Contains(mqtt.QosValues, q) {
+						return fmt.Errorf(
+							"%w: %d, allowed values are %v",
+							ErrMqttQosValueNotAllowed,
+							q,
+							mqtt.QosValues,
+						)
+					}
+
+					return nil
+				},
+			},
 		},
 	}
 }
@@ -144,6 +196,41 @@ func serveAction() cli.ActionFunc {
 		sarc, err := receiver.New(ctx, uri, cmd.StringSlice("record-message-type")...)
 		if err != nil {
 			return fmt.Errorf("error creating a new receiver: %w", err)
+		}
+
+		// NOTE: defer runs last to first; shutdown handlers before canceling
+		// context so in-flight work can finish, then cancel to stop goroutines.
+		defer func() {
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer shutdownCancel()
+
+			if err := sarc.MessageNotifier.Shutdown(shutdownCtx); err != nil {
+				logger.Error().Err(err).Msg("error while shutting down notifier")
+			}
+		}()
+
+		if cmd.IsSet("mqtt-server") {
+			clientID := cmd.String("mqtt-client-id")
+
+			if clientID == "" {
+				clientID = mqtt.MakeClientID(sarc.LocalAddr())
+			}
+
+			err := mqtt.Init(
+				ctx,
+				sarc.MessageNotifier,
+				mqtt.InitConfig{
+					Server:      cmd.String("mqtt-server"),
+					ClientID:    clientID,
+					User:        cmd.String("mqtt-user"),
+					Password:    cmd.String("mqtt-password"),
+					TopicPrefix: cmd.String("mqtt-topic-prefix"),
+					Qos:         cmd.Int("mqtt-qos"),
+				},
+			)
+			if err != nil {
+				return fmt.Errorf("%w: %w", ErrMqttInitError, err)
+			}
 		}
 
 		srv := server.New(ctx, sarc, cmd.Bool("repeat-last-message"))

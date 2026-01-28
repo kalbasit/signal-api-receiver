@@ -35,7 +35,7 @@ type Server struct {
 
 type client interface {
 	Connect() error
-	ReceiveLoop() error
+	ReceiveLoop(ctx context.Context) error
 	Pop() *receiver.Message
 	Flush() []receiver.Message
 }
@@ -50,7 +50,7 @@ func New(ctx context.Context, sarc client, repeatLastMessage bool) *Server {
 
 	s.createRouter()
 
-	go s.start()
+	go s.start(ctx)
 
 	return s
 }
@@ -58,11 +58,11 @@ func New(ctx context.Context, sarc client, repeatLastMessage bool) *Server {
 // ServeHTTP implements http.Handler and turns the Server type into a handler.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) { s.router.ServeHTTP(w, r) }
 
-func (s *Server) start() {
+func (s *Server) start(ctx context.Context) {
 	log := s.logger.With().Str("func", "start").Logger()
 
 	for {
-		if err := s.sarc.ReceiveLoop(); err != nil {
+		if err := s.sarc.ReceiveLoop(ctx); err != nil {
 			log.Error().Err(err).Msg("error in the receive loop")
 		}
 	Reconnect:
