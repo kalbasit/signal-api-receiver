@@ -9,6 +9,8 @@ import (
 )
 
 func TestMakeRandomClientID(t *testing.T) {
+	t.Parallel()
+
 	clientID := mqtt.MakeClientID(&net.TCPAddr{IP: net.IPv4(10, 0, 0, 1)})
 
 	if !strings.HasPrefix(clientID, mqtt.ClientPrefix+"-") {

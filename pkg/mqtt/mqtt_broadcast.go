@@ -24,8 +24,11 @@ var (
 	// ErrMqttConnectionFailed is thrown when waiting for connection has failed.
 	ErrMqttConnectionFailed = errors.New("mqtt connection error")
 
+	//nolint:gochecknoglobals
 	initialConnectionTimeout = 5 * time.Second
-	reconnectDelay           = 10 * time.Second
+
+	//nolint:gochecknoglobals
+	reconnectDelay = 10 * time.Second
 )
 
 type handlerConfig struct {
@@ -76,7 +79,7 @@ func Init(
 		CleanStartOnInitialConnection: false,
 		SessionExpiryInterval:         60,
 		KeepAlive:                     20,
-		ReconnectBackoff: func(i int) time.Duration {
+		ReconnectBackoff: func(_ int) time.Duration {
 			return reconnectDelay
 		},
 		OnConnectionUp: func(_ *autopaho.ConnectionManager, _ *paho.Connack) {

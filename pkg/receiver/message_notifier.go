@@ -68,7 +68,7 @@ func (u *MessageNotifier) Shutdown(ctx context.Context) error {
 }
 
 func (u *MessageNotifier) trigger(ctx context.Context, payload MessageNotifierPayload) error {
-	if u.handlers == nil || len(u.handlers) == 0 {
+	if len(u.handlers) == 0 {
 		return nil
 	}
 

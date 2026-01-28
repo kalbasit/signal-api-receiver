@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+//nolint:gochecknoglobals
 var QosValues = []int{0, 1, 2}
 
 const ClientPrefix = "signal-api-receiver"
