@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	pahop "github.com/eclipse/paho.golang/packets"
 )
 
 //nolint:gochecknoglobals
@@ -68,4 +70,18 @@ func interfaceForLocalAddr(netInterfaces []net.Interface, localAddr *net.TCPAddr
 	}
 
 	return nil
+}
+
+func isUnrecoverableReasonCodeError(reasonCode byte) bool {
+	switch reasonCode {
+	case pahop.DisconnectProtocolError,
+		pahop.DisconnectNotAuthorized,
+		pahop.DisconnectRetainNotSupported,
+		pahop.DisconnectQoSNotSupported,
+		pahop.DisconnectUseAnotherServer,
+		pahop.DisconnectServerMoved:
+		return true
+	default:
+		return false
+	}
 }

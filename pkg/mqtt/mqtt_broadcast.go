@@ -75,7 +75,9 @@ func Init(
 
 	topic := strings.Join([]string{strings.Trim(config.TopicPrefix, "#/ "), "message"}, "/")
 
-	conn, err := autopaho.NewConnection(ctx, autopaho.ClientConfig{
+	var conn *autopaho.ConnectionManager
+
+	conn, err = autopaho.NewConnection(ctx, autopaho.ClientConfig{
 		ServerUrls:                    []*url.URL{serverURL},
 		ConnectUsername:               config.User,
 		ConnectPassword:               []byte(config.Password),
@@ -109,14 +111,20 @@ func Init(
 				logger.Error().Err(err).Msg("MQTT: Client error")
 			},
 			OnServerDisconnect: func(d *paho.Disconnect) {
-				if d.Properties != nil {
-					logger.Error().Msgf("MQTT: Server requested disconnect: %s", d.Properties.ReasonString)
+				if isUnrecoverableReasonCodeError(d.ReasonCode) {
+					logger.Error().Msgf("Cancel reconnect. Server disconnected with unrecoverable reason-code %d.", d.ReasonCode)
+					_ = conn.Disconnect(ctx)
 				} else {
-					logger.Error().Msgf("MQTT: Server requested disconnect; reason code: %d", d.ReasonCode)
+					if d.Properties != nil {
+						logger.Error().Msgf("MQTT: Server requested disconnect: %s", d.Properties.ReasonString)
+					} else {
+						logger.Error().Msgf("MQTT: Server requested disconnect; reason code: %d", d.ReasonCode)
+					}
 				}
 			},
 		},
 	})
+	// Initial connect will return unrecoverable Connack error
 	if err != nil {
 		return fmt.Errorf(
 			"%w: error whilst attempting mqtt connection: %w",
@@ -124,26 +132,7 @@ func Init(
 			err,
 		)
 	}
-
-	waitCtx, waitCancel := context.WithTimeout(ctx, initialConnectionTimeout)
-	defer waitCancel()
-
-	if err = conn.AwaitConnection(waitCtx); err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			logger.Warn().
-				Err(err).
-				Dur("timeout", initialConnectionTimeout).
-				Dur("reconnect", reconnectDelay).
-				Msg("MQTT: Initial connection timed out; continuing startup")
-		} else {
-			return fmt.Errorf(
-				"%w: mqtt error while waiting for connection: %w",
-				ErrMqttConnectionFailed,
-				err,
-			)
-		}
-	}
-
+	// Register with notifier
 	notifier.RegisterHandler(ctx, handlerOpt{
 		Logger: logger,
 		Topic:  topic,
@@ -153,6 +142,18 @@ func Init(
 		},
 		Manager: conn,
 	})
+
+	waitCtx, waitCancel := context.WithTimeout(ctx, initialConnectionTimeout)
+	defer waitCancel()
+
+	if err = conn.AwaitConnection(waitCtx); err != nil && errors.Is(err, context.DeadlineExceeded) == false {
+		// The initial connection may be slow, but anything that cancels its context is unrecoverable for us too.
+		return fmt.Errorf(
+			"%w: mqtt error while waiting for connection: %w",
+			ErrMqttConnectionFailed,
+			err,
+		)
+	}
 
 	return nil
 }
