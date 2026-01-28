@@ -1,6 +1,6 @@
 module github.com/kalbasit/signal-api-receiver
 
-go 1.24.3
+go 1.25.5
 
 require (
 	github.com/eclipse/paho.golang v0.23.0
