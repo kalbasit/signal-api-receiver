@@ -1,6 +1,6 @@
 module github.com/kalbasit/signal-api-receiver
 
-go 1.24.3
+go 1.25.5
 
 require (
 	github.com/eclipse/paho.golang v0.23.0
@@ -16,7 +16,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
