@@ -152,6 +152,12 @@ func serveCommand() *cli.Command {
 					return nil
 				},
 			},
+			&cli.BoolFlag{
+				Name:    "mqtt-validate-certificate",
+				Usage:   "MQTT-Client verifies the server's certificate chain and host name",
+				Sources: cli.EnvVars("MQTT_VALIDATE_CERTIFICATE"),
+				Value:   true,
+			},
 		},
 	}
 }
@@ -220,12 +226,13 @@ func serveAction() cli.ActionFunc {
 				ctx,
 				sarc.MessageNotifier,
 				mqtt.InitConfig{
-					Server:      cmd.String("mqtt-server"),
-					ClientID:    clientID,
-					User:        cmd.String("mqtt-user"),
-					Password:    cmd.String("mqtt-password"),
-					TopicPrefix: cmd.String("mqtt-topic-prefix"),
-					Qos:         cmd.Int("mqtt-qos"),
+					Server:              cmd.String("mqtt-server"),
+					ClientID:            clientID,
+					User:                cmd.String("mqtt-user"),
+					Password:            cmd.String("mqtt-password"),
+					TopicPrefix:         cmd.String("mqtt-topic-prefix"),
+					Qos:                 cmd.Int("mqtt-qos"),
+					ValidateCertificate: cmd.Bool("mqtt-validate-certificate"),
 				},
 			)
 			if err != nil {

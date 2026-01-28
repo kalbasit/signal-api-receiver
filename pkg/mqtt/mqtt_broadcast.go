@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -47,12 +48,13 @@ type handlerOpt struct {
 }
 
 type InitConfig struct {
-	Server      string
-	ClientID    string
-	User        string
-	Password    string
-	TopicPrefix string
-	Qos         int
+	Server              string
+	ClientID            string
+	User                string
+	Password            string
+	TopicPrefix         string
+	Qos                 int
+	ValidateCertificate bool
 }
 
 func Init(
@@ -78,7 +80,10 @@ func Init(
 	var conn *autopaho.ConnectionManager
 
 	conn, err = autopaho.NewConnection(ctx, autopaho.ClientConfig{
-		ServerUrls:                    []*url.URL{serverURL},
+		ServerUrls: []*url.URL{serverURL},
+		TlsCfg: &tls.Config{
+			InsecureSkipVerify: !config.ValidateCertificate,
+		},
 		ConnectUsername:               config.User,
 		ConnectPassword:               []byte(config.Password),
 		CleanStartOnInitialConnection: false,
