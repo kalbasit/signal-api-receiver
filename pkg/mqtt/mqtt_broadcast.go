@@ -180,7 +180,7 @@ func (m handlerOpt) Handle(ctx context.Context, messagePayload receiver.MessageN
 		return err
 	}
 
-	_, err = m.Manager.Publish(ctx, &paho.Publish{
+	publishOptions := &paho.Publish{
 		QoS:    byte(m.Config.Qos),
 		Topic:  m.Topic,
 		Retain: false,
@@ -189,7 +189,18 @@ func (m handlerOpt) Handle(ctx context.Context, messagePayload receiver.MessageN
 			ContentType:   "application/json",
 		},
 		Payload: payload,
-	})
+	}
+
+	_, err = m.Manager.Publish(ctx, publishOptions)
+
+	if errors.Is(err, autopaho.ConnectionDownError) {
+		m.Logger.Warn().
+			AnErr("publish_error", autopaho.ConnectionDownError).
+			Msg("MQTT: Connection issues while publishing - using queue to postpone.")
+
+		err = m.Manager.PublishViaQueue(ctx, &autopaho.QueuePublish{Publish: publishOptions})
+	}
+
 	if err != nil {
 		m.Logger.Error().Err(err).Msg("MQTT: Error while publishing message")
 
