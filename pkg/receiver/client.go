@@ -125,7 +125,12 @@ func (c *Client) Pop() *Message {
 
 // LocalAddr returns connection local address.
 func (c *Client) LocalAddr() *net.TCPAddr {
-	return c.conn.LocalAddr().(*net.TCPAddr)
+	addr, ok := c.conn.LocalAddr().(*net.TCPAddr)
+	if !ok {
+		c.logger.Warn().Msgf("local address is not a TCP address: %T", c.conn.LocalAddr())
+		return nil
+	}
+	return addr
 }
 
 func (c *Client) recordMessage(ctx context.Context, msg []byte) {
