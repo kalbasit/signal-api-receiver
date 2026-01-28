@@ -25,10 +25,13 @@ var (
 	ErrMqttConnectionFailed = errors.New("mqtt connection error")
 
 	//nolint:gochecknoglobals
+	connectionTimeout = 10 * time.Second
+
+	//nolint:gochecknoglobals
 	initialConnectionTimeout = 5 * time.Second
 
 	//nolint:gochecknoglobals
-	reconnectDelay = 10 * time.Second
+	reconnectDelay = 7 * time.Second
 )
 
 type handlerConfig struct {
@@ -79,8 +82,14 @@ func Init(
 		CleanStartOnInitialConnection: false,
 		SessionExpiryInterval:         60,
 		KeepAlive:                     20,
-		ReconnectBackoff: func(_ int) time.Duration {
-			return reconnectDelay
+		ConnectTimeout:                connectionTimeout,
+		ReconnectBackoff: func(attempt int) time.Duration {
+			switch attempt {
+			case 0:
+				return 0
+			default:
+				return reconnectDelay
+			}
 		},
 		OnConnectionUp: func(_ *autopaho.ConnectionManager, _ *paho.Connack) {
 			logger.Info().
@@ -91,7 +100,7 @@ func Init(
 		},
 		OnConnectError: func(err error) {
 			logger.Error().Err(err).
-				Dur("reconnect", reconnectDelay).
+				Str("reconnect_in", strconv.FormatFloat(reconnectDelay.Seconds(), 'f', 0, 64)+"sec").
 				Msg("MQTT: Error whilst attempting MQTT connection")
 		},
 		ClientConfig: paho.ClientConfig{
