@@ -1,10 +1,15 @@
 package mqtt
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/urfave/cli/v3"
 
 	pahop "github.com/eclipse/paho.golang/packets"
 )
@@ -84,4 +89,29 @@ func isUnrecoverableReasonCodeError(reasonCode byte) bool {
 	default:
 		return false
 	}
+}
+
+var (
+	// ErrMqttUserAndPasswordRequired is returned if command has some but not all flags (requiredFlagsForMqtt) given.
+	ErrMqttUserAndPasswordRequired = errors.New("some of the required flags for mqtt are missing")
+
+	// Flags required for a functional mqtt configuration
+	// Unauthenticated broker connections are intentionally unsupported.
+	requiredFlagsForMqtt = []string{"mqtt-server", "mqtt-user", "mqtt-password"}
+)
+
+func ValidateFlags(ctx context.Context, cmd *cli.Command) (context.Context, error) {
+	for i, n := range requiredFlagsForMqtt[1:] {
+		prev := cmd.IsSet(requiredFlagsForMqtt[i]) && len(cmd.String(requiredFlagsForMqtt[i])) > 0
+		curr := cmd.IsSet(n) && len(cmd.String(n)) > 0
+
+		// FlagXor
+		if (prev || curr) && !(prev && curr) {
+			_ = cli.ShowSubcommandHelp(cmd)
+
+			return nil, fmt.Errorf("%w: %v", ErrMqttUserAndPasswordRequired, requiredFlagsForMqtt)
+		}
+	}
+
+	return ctx, nil
 }

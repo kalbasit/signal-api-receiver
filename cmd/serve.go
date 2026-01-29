@@ -171,6 +171,7 @@ func serveCommand() *cli.Command {
 				Value:       true,
 			},
 		},
+		Before: mqtt.ValidateFlags,
 	}
 }
 
