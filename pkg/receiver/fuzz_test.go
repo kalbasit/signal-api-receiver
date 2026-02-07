@@ -50,13 +50,15 @@ func FuzzUnmarshalMessage(f *testing.F) {
 
 		// Also check for potential panics in String() if we were to use it
 		for _, mt := range m.MessageTypes() {
-			defer func() {
-				if r := recover(); r != nil {
-					t.Errorf("panic in mt.String() for message type %d: %v", mt, r)
-				}
-			}()
+			func(mt receiver.MessageType) {
+				defer func() {
+					if r := recover(); r != nil {
+						t.Errorf("panic in mt.String() for message type %d: %v", mt, r)
+					}
+				}()
 
-			_ = mt.String()
+				_ = mt.String()
+			}(mt)
 		}
 	})
 }
