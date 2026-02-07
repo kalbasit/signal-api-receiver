@@ -2,23 +2,20 @@
   perSystem =
     {
       self',
-      lib,
       pkgs,
       config,
       ...
     }:
     {
       checks =
-        let
-          packages = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
-          devShells = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
-        in
-        packages
-        // devShells
+        self'.packages
+        // self'.devShells
         // {
-          golangci-lint = config.packages.signal-api-receiver.overrideAttrs (oa: {
-            name = "golangci-lint";
+          golangci-lint-check = config.packages.signal-api-receiver.overrideAttrs (oa: {
+            name = "golangci-lint-check";
             src = ../../.;
+            # ensure the output is only out since it's the only thing this package does.
+            outputs = [ "out" ];
             nativeBuildInputs = oa.nativeBuildInputs ++ [ pkgs.golangci-lint ];
             buildPhase = ''
               HOME=$TMPDIR

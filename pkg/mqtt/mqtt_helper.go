@@ -54,6 +54,7 @@ func interfaceForLocalAddr(netInterfaces []net.Interface, localAddr *net.TCPAddr
 
 		for _, netAddress := range netAddresses {
 			var aIP net.IP
+
 			switch v := netAddress.(type) {
 			case *net.IPNet:
 				aIP = v.IP

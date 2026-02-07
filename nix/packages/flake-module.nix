@@ -1,7 +1,7 @@
 {
   imports = [
     ./docker.nix
-    ./signal-api-receiver.nix
+    ./signal-api-receiver
   ];
 
   perSystem =
