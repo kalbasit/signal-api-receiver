@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	//"fmt"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -39,6 +40,13 @@ type client interface {
 	Pop() *receiver.Message
 	Flush() []receiver.Message
 }
+
+type NilMessage struct {
+	Account *string `json:"account"`
+	Envelope struct{} `json:"envelope"`
+}
+
+var nilMessage = NilMessage{}
 
 // New returns a new Server.
 func New(ctx context.Context, sarc client, repeatLastMessage bool) *Server {
@@ -99,13 +107,15 @@ func (s *Server) receivePop(w http.ResponseWriter, _ *http.Request) {
 		}
 	}
 
+	w.Header().Set(contentType, contentTypeJSON)
+
 	if msg == nil {
-		w.WriteHeader(http.StatusNoContent)
+		if err := json.NewEncoder(w).Encode(&NilMessage{}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 
 		return
 	}
-
-	w.Header().Set(contentType, contentTypeJSON)
 
 	if err := json.NewEncoder(w).Encode(msg); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
