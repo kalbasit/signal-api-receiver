@@ -9,35 +9,36 @@
     {
       packages.signal-api-receiver =
         let
-          shortRev = self.shortRev or self.dirtyShortRev;
-          rev = self.rev or self.dirtyRev;
-          tag = builtins.getEnv "RELEASE_VERSION";
+          version =
+            let
+              rev = self.rev or self.dirtyRev;
+              tag = lib.trim (builtins.readFile ./version.txt);
+            in
+            if tag != "" then tag else rev;
 
-          version = if tag != "" then tag else rev;
+          vendorHash = "sha256-HR2KeAWe1dXE1VZlrjllR2C9O3rkYu1ArabbcPYLXXc=";
         in
         pkgs.buildGoModule {
-          name = "signal-api-receiver-${shortRev}";
+          inherit version vendorHash;
+
+          name = "signal-api-receiver";
 
           src = lib.fileset.toSource {
             fileset = lib.fileset.unions [
-              ../../cmd
-              ../../go.mod
-              ../../go.sum
-              ../../main.go
-              ../../pkg
+              ../../../cmd
+              ../../../go.mod
+              ../../../go.sum
+              ../../../main.go
+              ../../../pkg
             ];
-            root = ../..;
+            root = ../../..;
           };
-
-          env.CGO_ENABLED = "0";
 
           ldflags = [
             "-X github.com/kalbasit/signal-api-receiver/cmd.Version=${version}"
           ];
 
           subPackages = [ "." ];
-
-          vendorHash = "sha256-HR2KeAWe1dXE1VZlrjllR2C9O3rkYu1ArabbcPYLXXc=";
 
           doCheck = true;
 

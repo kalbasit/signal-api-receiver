@@ -383,6 +383,7 @@ func TestServerReconnect(t *testing.T) {
 	mc.recvMsg <- receiver.Message{Account: "0"}
 
 	mc.recvErr <- nil
+
 	mc.connectErr <- nil
 
 	assert.Len(t, mc.msgs, 1)
@@ -467,6 +468,7 @@ func TestRepeatLastMessage(t *testing.T) {
 				}
 
 				close(messages)
+
 				ch <- messages
 
 				// wait for the receiver to read all messages

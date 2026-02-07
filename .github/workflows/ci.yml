@@ -7,23 +7,103 @@ on:
     branches:
       - main
       - "release-*"
+  push:
+    branches:
+      - "main"
+      - "release-*"
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 jobs:
-  flake:
-    uses: ./.github/workflows/flake.yml
-    permissions:
-      id-token: "write"
-      contents: "read"
-    with:
-      systems: "['x86_64-linux', 'aarch64-linux']"
-  docker:
-    uses: ./.github/workflows/docker.yml
+  filter:
+    runs-on: ubuntu-24.04
+    outputs:
+      go_deps: ${{ steps.filter.outputs.go_deps }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            go_deps:
+              - "go.mod"
+              - "go.sum"
+  generate:
+    needs: filter
+    if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) && needs.filter.outputs.go_deps == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GHA_PAT_TOKEN }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - uses: cachix/install-nix-action@v31
+      - uses: cachix/cachix-action@v16
+        with:
+          name: signal-api-receiver
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Update vendor hash
+        if: needs.filter.outputs.go_deps == 'true'
+        run: |
+          if nix build --print-build-logs .#signal-api-receiver.goModules 2> /tmp/log; then
+            exit 0
+          fi
+
+          hash="$(grep 'got:' /tmp/log | awk '{print $2}')"
+          echo "hash=$hash"
+
+          if [[ -z "$hash" ]]; then
+            echo >@2 hash is empty
+            exit 1
+          fi
+
+          sed -e "s#vendorHash =.*\$#vendorHash = \"$hash\";#g" -i nix/packages/signal-api-receiver/default.nix
+
+          git diff
+      - uses: stefanzweifel/git-auto-commit-action@v7
+        if: needs.filter.outputs.go_deps == 'true'
+        with:
+          commit_message: "Auto Update Vendor Hash"
+  build:
+    uses: ./.github/workflows/build.yml
     with:
       systems: "['x86_64-linux', 'aarch64-linux']"
       images: kalbasit/signal-api-receiver
-      username: ${{ vars.DOCKERHUB_USERNAME }}
+      dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
       push_images: ${{ github.event.pull_request.head.repo.fork == false }}
     secrets:
-      password: ${{ secrets.DOCKERHUB_TOKEN }}
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
+      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+  ci:
+    runs-on: ubuntu-24.04
+    # Run even if dependencies are skipped or fail, so we can check their status
+    if: always()
+    needs:
+      - filter
+      - build
+      - generate
+    steps:
+      - name: Check Workflow Status
+        run: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          # Get the full JSON result of all dependencies
+          results='${{ toJSON(needs) }}'
+
+          # Check if any job resulted in "failure"
+          if echo "$results" | grep -q '"result": "failure"'; then
+            echo "::error::One or more dependent jobs failed."
+            exit 1
+          fi
+
+          # Check if any job resulted in "cancelled"
+          if echo "$results" | grep -q '"result": "cancelled"'; then
+            echo "::error::One or more dependent jobs were cancelled."
+            exit 1
+          fi
+
+          # If we get here, jobs were either "success" or "skipped" (which is valid)
+          echo "All jobs passed or were validly skipped."

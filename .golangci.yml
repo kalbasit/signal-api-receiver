@@ -1,4 +1,20 @@
 version: "2"
+formatters:
+  enable:
+    - gci
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - alias
+        - prefix(github.com/kalbasit/signal-api-receiver)
+        - blank
+        - dot
+      custom-order: true
+  exclusions:
+    generated: lax
 linters:
   enable:
     - err113
@@ -34,7 +50,7 @@ linters:
     - unparam
     - wastedassign
     - whitespace
-    - wsl
+    - wsl_v5
     - zerologlint
   exclusions:
     generated: lax
@@ -43,28 +59,8 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
-formatters:
-  enable:
-    - gci
-    - gofumpt
-    - goimports
   settings:
-    gci:
-      sections:
-        - standard
-        - default
-        - alias
-        - localmodule
-        - blank
-        - dot
-      custom-order: true
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2

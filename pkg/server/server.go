@@ -65,6 +65,7 @@ func (s *Server) start(ctx context.Context) {
 		if err := s.sarc.ReceiveLoop(ctx); err != nil {
 			log.Error().Err(err).Msg("error in the receive loop")
 		}
+
 	Reconnect:
 		if err := s.sarc.Connect(); err != nil {
 			log.Error().Err(err).Msg("Error reconnecting: %v")

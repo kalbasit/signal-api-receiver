@@ -43,6 +43,7 @@ func InitNotifier(ctx context.Context) (*MessageNotifier, MessageNotifierTrigger
 func (u *MessageNotifier) RegisterHandler(_ context.Context, handler handleable) {
 	u.sliceMu.Lock()
 	defer u.sliceMu.Unlock()
+
 	u.handlers = append(u.handlers, handler)
 }
 
@@ -53,6 +54,7 @@ func (u *MessageNotifier) Shutdown(ctx context.Context) error {
 	u.runMu.Unlock()
 
 	done := make(chan struct{})
+
 	go func() {
 		u.logger.Debug().Msg("Waiting for active handlers to complete")
 		u.wg.Wait()
