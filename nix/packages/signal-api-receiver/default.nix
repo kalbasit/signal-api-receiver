@@ -42,6 +42,20 @@
 
           doCheck = true;
 
+          checkFlags = [
+            "-race"
+            "-coverprofile=coverage.txt"
+          ];
+
+          outputs = [
+            "out"
+            "coverage"
+          ];
+
+          postCheck = ''
+            mv coverage.txt $coverage
+          '';
+
           meta = {
             description = "Signal API receiver";
             homepage = "https://github.com/kalbasit/signal-api-receiver";

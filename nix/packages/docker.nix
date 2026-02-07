@@ -2,6 +2,7 @@
   perSystem =
     {
       config,
+      lib,
       pkgs,
       ...
     }:
@@ -40,12 +41,14 @@
             pkgs.tzdata
 
             # the signal-api-receiver package
-            (config.packages.signal-api-receiver.overrideAttrs (_oa: {
-              # Disable tests for the docker image build.
-              # This is because the tests provide no value in this package since
-              # the default package (signal-api-receiver) of the flake already
-              # runs the tests.
+            (config.packages.signal-api-receiver.overrideAttrs (oa: {
+              # Disable tests for the docker image build. Also remove the
+              # coverage output that's only generated when tests run. This is
+              # because they provide no value in this package since the default
+              # package (signal-api-receiver) of the flake already runs the
+              # tests.
               doCheck = false;
+              outputs = lib.remove "coverage" (oa.outputs or [ ]);
             }))
           ];
         config = {
