@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/eclipse/paho.golang v0.23.0
-	github.com/go-chi/chi/v5 v5.2.4
+	github.com/go-chi/chi/v5 v5.2.5
 	github.com/gorilla/websocket v1.5.3
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.11.1
