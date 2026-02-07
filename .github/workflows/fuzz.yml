@@ -1,0 +1,74 @@
+name: Fuzzing
+on:
+  schedule:
+    - cron: "0 2 * * *" # Run daily at 2 AM UTC
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  fuzz:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pkg: pkg/receiver
+            func: FuzzParseMessageType
+            fuzz_pattern: FuzzParseMessageType
+            time: 45m
+          - pkg: pkg/receiver
+            func: FuzzUnmarshalMessage
+            fuzz_pattern: FuzzUnmarshalMessage
+            time: 45m
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+      - uses: cachix/cachix-action@v16
+        with:
+          name: signal-api-receiver
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Fuzz ${{ matrix.func }}
+        run: nix develop --command go test -fuzz=${{ matrix.fuzz_pattern }} -fuzztime=${{ matrix.time }} ./${{ matrix.pkg }}
+      - name: Format artifact name
+        if: failure()
+        run: |
+          set -euo pipefail
+          RAW_PATH="${{ matrix.pkg }}/testdata/fuzz/${{ matrix.func }}"
+          CLEAN_NAME="${RAW_PATH//[^a-zA-Z0-9.-]/_}"
+          echo "ARTIFACT_NAME=$CLEAN_NAME" >> "$GITHUB_ENV"
+      - name: Upload crash file(s)
+        id: upload-step
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ matrix.pkg }}/testdata/fuzz/${{ matrix.func }}
+          if-no-files-found: error
+      - name: Create Issue for the crash
+        if: failure() && steps.upload-step.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="Fuzzing Crash: ${{ matrix.func }} in ${{ matrix.pkg }}"
+
+          EXISTING_ISSUE=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number')
+          if [ -n "$EXISTING_ISSUE" ]; then
+            echo "Issue already exists: #$EXISTING_ISSUE"
+            exit 0
+          fi
+
+          BODY="$(cat <<EOF
+          Fuzzing test '${{ matrix.func }}' in '${{ matrix.pkg }}' crashed.
+
+          **Commit:** ${{ github.sha }}
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          See artifacts in the link above for reproduction.
+          EOF
+          )"
+
+          gh issue create \
+            --title "$TITLE" \
+            --body "$BODY" \
+            --label "fuzz-crash"
