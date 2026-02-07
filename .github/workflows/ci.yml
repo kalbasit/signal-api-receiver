@@ -46,7 +46,9 @@ jobs:
       - name: Update vendor hash
         if: needs.filter.outputs.go_deps == 'true'
         run: |
-          if nix build --print-build-logs .#signal-api-receiver.goModules 2> /tmp/log; then
+          go mod tidy
+
+          if nix build --print-build-logs .#signal-api-receiver.goModules --rebuild 2> /tmp/log; then
             exit 0
           fi
 
