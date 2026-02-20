@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"regexp"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -243,7 +244,7 @@ func serveAction() cli.ActionFunc {
 					ClientID:            clientID,
 					User:                cmd.String("mqtt-user"),
 					Password:            cmd.String("mqtt-password"),
-					TopicPrefix:         cmd.String("mqtt-topic-prefix"),
+					TopicPrefix:         strings.Trim(cmd.String("mqtt-topic-prefix"), "#/ "),
 					Qos:                 cmd.Int("mqtt-qos"),
 					ValidateCertificate: cmd.Bool("mqtt-validate-certificate"),
 				},

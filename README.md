@@ -106,7 +106,7 @@ To run `signal-api-receiver` from source, you need to provide the following comm
 
 - `--mqtt-client-id <value>`: A custom client-id. This should be unique on your broker. (default: `signal-api-receiver-<mac-address>`) Can be set using the `$MQTT_CLIENT_ID` environment variable.
 
-- `--mqtt-topic-prefix <value>`: Define a custom topic-prefix to publish messages (default: `signal-api-receiver`). Topic resolves to `<topic-prefix>/message`. Can be set using the `$MQTT_TOPIC_PREFIX` environment variable.
+- `--mqtt-topic-prefix <value>`: Define a custom topic-prefix to publish messages (default: `signal-api-receiver`). Topics are resolved to `<topic-prefix>/message` and `<topic-prefix>/online` (retained). Can be set using the `$MQTT_TOPIC_PREFIX` environment variable.
 
 - `--mqtt-qos <value>` Change the quality of service. Possible options are `0`, `1`, `2`. Can be set using the `MQTT_QOS` environment variable.
 
