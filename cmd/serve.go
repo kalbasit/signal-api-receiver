@@ -164,6 +164,14 @@ func serveCommand() *cli.Command {
 				},
 			},
 			&cli.BoolFlag{
+				Name:        "mqtt-retain",
+				Category:    MqttCat,
+				Usage:       "If true published messages will be retained",
+				Sources:     cli.EnvVars("MQTT_RETAIN"),
+				Value:       false,
+				DefaultText: "false",
+			},
+			&cli.BoolFlag{
 				Name:        "mqtt-validate-certificate",
 				Category:    MqttCat,
 				DefaultText: "true",
@@ -246,6 +254,7 @@ func serveAction() cli.ActionFunc {
 					Password:            cmd.String("mqtt-password"),
 					TopicPrefix:         strings.Trim(cmd.String("mqtt-topic-prefix"), "#/ "),
 					Qos:                 cmd.Int("mqtt-qos"),
+					RetainMessages:      cmd.Bool("mqtt-retain"),
 					ValidateCertificate: cmd.Bool("mqtt-validate-certificate"),
 				},
 			)

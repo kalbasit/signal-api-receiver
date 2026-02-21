@@ -55,8 +55,9 @@ var (
 )
 
 type handlerConfig struct {
-	Qos         int
-	TopicPrefix string
+	Qos            int
+	TopicPrefix    string
+	RetainMessages bool
 }
 
 type handlerOpt struct {
@@ -73,6 +74,7 @@ type InitConfig struct {
 	Password            string
 	TopicPrefix         string
 	Qos                 int
+	RetainMessages      bool
 	ValidateCertificate bool
 }
 
@@ -181,8 +183,9 @@ func Init(
 		Logger: logger,
 		Topic:  strings.Join([]string{config.TopicPrefix, topicMessageSuffix}, "/"),
 		Config: handlerConfig{
-			Qos:         config.Qos,
-			TopicPrefix: config.TopicPrefix,
+			Qos:            config.Qos,
+			TopicPrefix:    config.TopicPrefix,
+			RetainMessages: config.RetainMessages,
 		},
 		Manager: conn,
 	})
@@ -227,7 +230,8 @@ func (m handlerOpt) Handle(ctx context.Context, messagePayload receiver.MessageN
 	publishOptions := &paho.Publish{
 		QoS:    byte(m.Config.Qos),
 		Topic:  m.Topic,
-		Retain: false,
+		Retain: m.Config.RetainMessages,
+
 		Properties: &paho.PublishProperties{
 			PayloadFormat: &payloadFormat,
 			ContentType:   payloadContentType,
