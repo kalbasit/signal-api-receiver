@@ -160,6 +160,12 @@ func Init(
 					}
 				}
 			},
+			PublishHook: func(publish *paho.Publish) {
+				logger.Debug().
+					Bool("retain", publish.Retain).
+					Bytes("payload", publish.Payload).
+					Msg("MQTT: A message was published to " + publish.Topic)
+			},
 		},
 	})
 	// Initial connect will return unrecoverable Connack error
