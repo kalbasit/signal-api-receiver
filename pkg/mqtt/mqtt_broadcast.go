@@ -98,7 +98,9 @@ func Init(
 			publishOnlineState(ctx, manager, cfg, true)
 		},
 		OnConnectionDown: func() bool {
-			publishOnlineState(ctx, conn, cfg, false)
+			logger.Info().
+				Str("clientID", options.ClientID).
+				Msg("Connection has been lost.")
 
 			return true
 		},
@@ -225,7 +227,7 @@ func (m *handlerOpt) publishMessage(ctx context.Context, mPayload receiver.Notif
 		Retain:     m.Config.RetainMessages,
 		Properties: m.Config.PublishProperties,
 		Payload:    payload,
-	})
+	}, true)
 }
 
 func (m *handlerOpt) publishConnectionState(ctx context.Context, payload receiver.NotifierPayload) error {
@@ -235,7 +237,7 @@ func (m *handlerOpt) publishConnectionState(ctx context.Context, payload receive
 		Retain:     m.Config.StatusRetain,
 		Properties: m.Config.PublishProperties,
 		Payload:    m.Config.GetStatusPayloadForState(*payload.IsConnected),
-	})
+	}, true)
 }
 
 func publishOnlineState(ctx context.Context, manager *autopaho.ConnectionManager, cfg *config.Config, state bool) {
@@ -245,10 +247,15 @@ func publishOnlineState(ctx context.Context, manager *autopaho.ConnectionManager
 		Retain:     cfg.StatusRetain,
 		Properties: cfg.PublishProperties,
 		Payload:    cfg.GetStatusPayloadForState(state),
-	})
+	}, false)
 }
 
-func publish(ctx context.Context, manager *autopaho.ConnectionManager, publishOptions *paho.Publish) error {
+func publish(
+	ctx context.Context,
+	manager *autopaho.ConnectionManager,
+	publishOptions *paho.Publish,
+	enqueue bool,
+) error {
 	_, err := manager.Publish(ctx, publishOptions)
 
 	if enqueue && errors.Is(err, autopaho.ConnectionDownError) {
@@ -266,5 +273,5 @@ func publish(ctx context.Context, manager *autopaho.ConnectionManager, publishOp
 			Err(err).Msg("Error while publishing")
 	}
 
-	return nil
+	return err
 }
