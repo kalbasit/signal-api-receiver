@@ -11,6 +11,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/kalbasit/signal-api-receiver/pkg/mqtt"
+	"github.com/kalbasit/signal-api-receiver/pkg/mqtt/config"
 )
 
 func TestMakeRandomClientID(t *testing.T) {
@@ -18,11 +19,11 @@ func TestMakeRandomClientID(t *testing.T) {
 
 	clientID := mqtt.MakeClientID(&net.TCPAddr{IP: net.IPv4(10, 0, 0, 1)})
 
-	if !strings.HasPrefix(clientID, mqtt.ClientPrefix+"-") {
+	if !strings.HasPrefix(clientID, config.ClientPrefix+"-") {
 		t.Fatalf("client ID should have prefix, got %q", clientID)
 	}
 
-	suffix := strings.TrimPrefix(clientID, mqtt.ClientPrefix+"-")
+	suffix := strings.TrimPrefix(clientID, config.ClientPrefix+"-")
 	if suffix == "" {
 		t.Fatalf("client ID suffix should not be empty")
 	}

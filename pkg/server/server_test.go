@@ -38,7 +38,7 @@ func newMockClient() *mockClient {
 	}
 }
 
-func (mc *mockClient) Connect() error {
+func (mc *mockClient) Connect(_ context.Context) error {
 	mc.connectCalled++
 	if mc.connectErr != nil {
 		return <-mc.connectErr

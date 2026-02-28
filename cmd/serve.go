@@ -8,12 +8,13 @@ import (
 	"net/url"
 	"regexp"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/sync/errgroup"
+
+	mqttconfig "github.com/kalbasit/signal-api-receiver/pkg/mqtt/config"
 
 	"github.com/kalbasit/signal-api-receiver/pkg/mqtt"
 	"github.com/kalbasit/signal-api-receiver/pkg/receiver"
@@ -140,7 +141,7 @@ func serveCommand() *cli.Command {
 			&cli.StringFlag{
 				Name:     "mqtt-topic-prefix",
 				Category: MqttCat,
-				Usage:    "Topic Prefix. {topic-prefix}/message",
+				Usage:    "Topic Prefix. {topic-prefix}/" + mqttconfig.TopicMessageSuffix,
 				Sources:  cli.EnvVars("MQTT_TOPIC_PREFIX"),
 				Value:    "signal-api-receiver",
 			},
@@ -151,12 +152,12 @@ func serveCommand() *cli.Command {
 				Sources:  cli.EnvVars("MQTT_QOS"),
 				Value:    1,
 				Validator: func(q int) error {
-					if !slices.Contains(mqtt.QosValues, q) {
+					if !slices.Contains(mqttconfig.QosValues(), q) {
 						return fmt.Errorf(
 							"%w: %d, allowed values are %v",
 							ErrMqttQosValueNotAllowed,
 							q,
-							mqtt.QosValues,
+							mqttconfig.QosValues(),
 						)
 					}
 
@@ -248,12 +249,12 @@ func serveAction() cli.ActionFunc {
 			err := mqtt.Init(
 				ctx,
 				sarc.MessageNotifier,
-				mqtt.InitConfig{
+				mqttconfig.InitOptions{
 					Server:              cmd.String("mqtt-server"),
 					ClientID:            clientID,
 					User:                cmd.String("mqtt-user"),
 					Password:            cmd.String("mqtt-password"),
-					TopicPrefix:         strings.Trim(cmd.String("mqtt-topic-prefix"), "#/ "),
+					TopicPrefix:         cmd.String("mqtt-topic-prefix"),
 					Qos:                 cmd.Int("mqtt-qos"),
 					RetainMessages:      cmd.Bool("mqtt-retain"),
 					ValidateCertificate: cmd.Bool("mqtt-validate-certificate"),

@@ -34,7 +34,7 @@ type Server struct {
 }
 
 type client interface {
-	Connect() error
+	Connect(ctx context.Context) error
 	ReceiveLoop(ctx context.Context) error
 	Pop() *receiver.Message
 	Flush() []receiver.Message
@@ -67,7 +67,7 @@ func (s *Server) start(ctx context.Context) {
 		}
 
 	Reconnect:
-		if err := s.sarc.Connect(); err != nil {
+		if err := s.sarc.Connect(ctx); err != nil {
 			log.Error().Err(err).Msg("Error reconnecting: %v")
 			time.Sleep(time.Second)
 

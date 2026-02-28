@@ -12,19 +12,16 @@ import (
 	"github.com/urfave/cli/v3"
 
 	pahop "github.com/eclipse/paho.golang/packets"
+
+	"github.com/kalbasit/signal-api-receiver/pkg/mqtt/config"
 )
-
-//nolint:gochecknoglobals
-var QosValues = []int{0, 1, 2}
-
-const ClientPrefix = "signal-api-receiver"
 
 func MakeClientID(localAddr *net.TCPAddr) string {
 	suffix := strconv.FormatInt(time.Now().Unix(), 10)
 
 	netInterfaces, err := net.Interfaces()
 	if err != nil || len(netInterfaces) == 0 {
-		return ClientPrefix + "-" + suffix
+		return config.ClientPrefix + "-" + suffix
 	}
 
 	// try to determine interface by local address
@@ -49,7 +46,7 @@ func MakeClientID(localAddr *net.TCPAddr) string {
 		)
 	}
 
-	return ClientPrefix + "-" + suffix
+	return config.ClientPrefix + "-" + suffix
 }
 
 func interfaceForLocalAddr(netInterfaces []net.Interface, localAddr *net.TCPAddr) *net.Interface {
@@ -98,6 +95,7 @@ var (
 
 	// Flags required for a functional mqtt configuration
 	// Unauthenticated broker connections are intentionally unsupported.
+	//nolint:gochecknoglobals
 	requiredFlagsForMqtt = []string{"mqtt-server", "mqtt-user", "mqtt-password"}
 )
 

@@ -8,30 +8,39 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// ErrMessageNotifierClosed is returned when handlers are no longer accepting work.
-var ErrMessageNotifierClosed = errors.New("notifier is closed")
+// ErrNotifierClosed is returned when handlers are no longer accepting work.
+var ErrNotifierClosed = errors.New("notifier is closed")
 
-type MessageNotifierPayload struct {
-	Message Message
+type NotifierPayload struct {
+	Message     *Message
+	IsConnected *bool
 }
 
-type MessageNotifierTrigger func(ctx context.Context, payload MessageNotifierPayload) error
+type NotifierTrigger func(ctx context.Context, payload NotifierPayload) error
 
 type handleable interface {
-	Handle(context.Context, MessageNotifierPayload) error
+	Handle(context.Context, NotifierPayload) error
 }
 
-type MessageNotifier struct {
+type Notifier struct {
 	logger   zerolog.Logger
 	sliceMu  sync.RWMutex
 	runMu    sync.RWMutex
 	wg       sync.WaitGroup
 	closed   bool
 	handlers []handleable
+	hRegCh   chan int
 }
 
-func InitNotifier(ctx context.Context) (*MessageNotifier, MessageNotifierTrigger) {
-	notifier := MessageNotifier{
+func PrepareNotifierPayload(message *Message, isConnected bool) NotifierPayload {
+	return NotifierPayload{
+		Message:     message,
+		IsConnected: &isConnected,
+	}
+}
+
+func InitNotifier(ctx context.Context) (*Notifier, NotifierTrigger) {
+	notifier := Notifier{
 		logger:   *zerolog.Ctx(ctx),
 		closed:   false,
 		handlers: make([]handleable, 0),
@@ -40,14 +49,14 @@ func InitNotifier(ctx context.Context) (*MessageNotifier, MessageNotifierTrigger
 	return &notifier, notifier.trigger
 }
 
-func (u *MessageNotifier) RegisterHandler(_ context.Context, handler handleable) {
+func (u *Notifier) RegisterHandler(_ context.Context, handler handleable) {
 	u.sliceMu.Lock()
 	defer u.sliceMu.Unlock()
 
 	u.handlers = append(u.handlers, handler)
 }
 
-func (u *MessageNotifier) Shutdown(ctx context.Context) error {
+func (u *Notifier) Shutdown(ctx context.Context) error {
 	u.logger.Debug().Msg("Closing notifier pipeline")
 	u.runMu.Lock()
 	u.closed = true
@@ -69,7 +78,7 @@ func (u *MessageNotifier) Shutdown(ctx context.Context) error {
 	}
 }
 
-func (u *MessageNotifier) trigger(ctx context.Context, payload MessageNotifierPayload) error {
+func (u *Notifier) trigger(ctx context.Context, payload NotifierPayload) error {
 	if len(u.handlers) == 0 {
 		return nil
 	}
@@ -80,7 +89,7 @@ func (u *MessageNotifier) trigger(ctx context.Context, payload MessageNotifierPa
 		u.logger.Debug().Msg("Notifier pipeline was closed. Skip handler execution")
 		u.runMu.RUnlock()
 
-		return ErrMessageNotifierClosed
+		return ErrNotifierClosed
 	}
 
 	u.sliceMu.RLock()
