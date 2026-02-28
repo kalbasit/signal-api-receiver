@@ -44,9 +44,14 @@ func InitNotifier(ctx context.Context) (*Notifier, NotifierTrigger) {
 		logger:   *zerolog.Ctx(ctx),
 		closed:   false,
 		handlers: make([]handleable, 0),
+		hRegCh:   make(chan int),
 	}
 
 	return &notifier, notifier.trigger
+}
+
+func (u *Notifier) HandlersRegistered() <-chan int {
+	return u.hRegCh
 }
 
 func (u *Notifier) RegisterHandler(_ context.Context, handler handleable) {
@@ -54,6 +59,10 @@ func (u *Notifier) RegisterHandler(_ context.Context, handler handleable) {
 	defer u.sliceMu.Unlock()
 
 	u.handlers = append(u.handlers, handler)
+
+	go func() {
+		u.hRegCh <- len(u.handlers)
+	}()
 }
 
 func (u *Notifier) Shutdown(ctx context.Context) error {

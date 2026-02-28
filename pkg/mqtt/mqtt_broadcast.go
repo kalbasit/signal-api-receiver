@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/eclipse/paho.golang/autopaho"
@@ -36,18 +37,15 @@ type handlerOpt struct {
 	Logger      zerolog.Logger
 	Config      *config.Config
 	Manager     *autopaho.ConnectionManager
+	connState   int32
+	connStateMu sync.Mutex
 }
 
-type InitConfig struct {
-	Server              string
-	ClientID            string
-	User                string
-	Password            string
-	TopicPrefix         string
-	Qos                 int
-	RetainMessages      bool
-	ValidateCertificate bool
-}
+const (
+	connStateUnknown int32 = -1
+	connStateOffline int32 = 0
+	connStateOnline  int32 = 1
+)
 
 func Init(
 	ctx context.Context,
@@ -227,6 +225,16 @@ func (m *handlerOpt) publishMessage(ctx context.Context, mPayload receiver.Notif
 		Retain:     m.Config.RetainMessages,
 		Properties: m.Config.PublishProperties,
 		Payload:    payload,
+	})
+}
+
+func (m *handlerOpt) publishConnectionState(ctx context.Context, payload receiver.NotifierPayload) error {
+	return publish(ctx, m.Manager, &paho.Publish{
+		QoS:        m.Config.StatusQosValue,
+		Topic:      m.Config.Topics.Connected,
+		Retain:     m.Config.StatusRetain,
+		Properties: m.Config.PublishProperties,
+		Payload:    m.Config.GetStatusPayloadForState(*payload.IsConnected),
 	})
 }
 

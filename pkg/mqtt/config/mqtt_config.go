@@ -44,8 +44,9 @@ type InitOptions struct {
 }
 
 type Topics struct {
-	Message string
-	Status  string
+	Message   string
+	Status    string
+	Connected string
 }
 
 func New(options InitOptions) *Config {

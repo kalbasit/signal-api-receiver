@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"sync/atomic"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog"
@@ -83,6 +84,9 @@ func (c *Client) Connect(ctx context.Context) error {
 
 		return defaultCloseHandler(code, text)
 	})
+
+	c.setConnected(ctx, true)
+
 	return nil
 }
 
@@ -100,12 +104,27 @@ func (c *Client) ReceiveLoop(ctx context.Context) error {
 	for {
 		_, msg, err := c.conn.ReadMessage()
 		if err != nil {
+			c.setConnected(ctx, false)
 			log.Error().Err(err).Msg("error returned by the websocket")
 
 			return err
 		}
 
 		c.recordMessage(ctx, msg)
+	}
+}
+
+func (c *Client) setConnected(ctx context.Context, isConnected bool) {
+	if c.connected.Swap(isConnected) == isConnected {
+		return
+	}
+
+	if c.notifierTrigger == nil {
+		return
+	}
+
+	if err := c.notifierTrigger(ctx, PrepareNotifierPayload(nil, isConnected)); err != nil {
+		c.logger.Error().Err(err).Bool("isConnected", isConnected).Msg("error while handling notify trigger")
 	}
 }
 
@@ -208,4 +227,16 @@ func (c *Client) shouldRecordMessage(m Message) bool {
 	}
 
 	return false
+}
+
+func (c *Client) notifyLoop(ctx context.Context) {
+	for {
+		if hc := <-c.MessageNotifier.HandlersRegistered(); hc > 0 {
+			isConnected := c.connected.Load()
+
+			if err := c.notifierTrigger(ctx, PrepareNotifierPayload(nil, isConnected)); err != nil {
+				c.logger.Error().Err(err).Bool("isConnected", isConnected).Msg("error while handling notify trigger")
+			}
+		}
+	}
 }
