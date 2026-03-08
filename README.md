@@ -108,11 +108,11 @@ To run `signal-api-receiver` from source, you need to provide the following comm
 
 - `--mqtt-topic-prefix <value>`: Define a custom topic-prefix to publish messages (default: `signal-api-receiver`). Topics are resolved to `<topic-prefix>/message` and `<topic-prefix>/online` (retained). Can be set using the `$MQTT_TOPIC_PREFIX` environment variable.
 
-- `--mqtt-qos <value>` Change the quality of service. Possible options are `0`, `1`, `2`. Can be set using the `MQTT_QOS` environment variable.
+- `--mqtt-qos <value>` Change the quality of service. Possible options are `0`, `1`, `2`. Can be set using the `$MQTT_QOS` environment variable.
 
-- `--mqtt-retain`: Retain published messages on the `<topic-prefix>/message` topic (default: false). Can be set using the `MQTT_RETAIN` environment variable.
+- `--mqtt-retain`: Retain published messages on the `<topic-prefix>/message` topic (default: false). Can be set using the `$MQTT_RETAIN` environment variable.
 
-- `--mqtt-validate-certificate <value>` Whether the client verifies the certificate chain and hostname of the server when using a TLS connection (`mqtts://`). Can be set using the `MQTT_VALIDATE_CERTIFICATE` environment variable.
+- `--mqtt-insecure-skip-verify`: Skip server certificate validation for TLS connections (`mqtts://`). By default, disabled. Can be set using the `$MQTT_INSECURE_SKIP_VERIFY` environment variable.
 
 > Only compatible with **MQTT v5** brokers
 

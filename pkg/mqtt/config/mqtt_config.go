@@ -33,14 +33,14 @@ func QosValues() []int {
 }
 
 type InitOptions struct {
-	Server              string
-	ClientID            string
-	User                string
-	Password            string
-	TopicPrefix         string
-	Qos                 int
-	RetainMessages      bool
-	ValidateCertificate bool
+	Server             string
+	ClientID           string
+	User               string
+	Password           string
+	TopicPrefix        string
+	Qos                int
+	RetainMessages     bool
+	InsecureSkipVerify bool
 }
 
 type Topics struct {

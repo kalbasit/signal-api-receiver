@@ -73,8 +73,7 @@ func Init(
 	conn, err = autopaho.NewConnection(ctx, autopaho.ClientConfig{
 		ServerUrls: []*url.URL{serverURL},
 		TlsCfg: &tls.Config{
-			//nolint:gosec
-			InsecureSkipVerify: !options.ValidateCertificate,
+			InsecureSkipVerify: options.InsecureSkipVerify, //nolint:gosec
 		},
 		ConnectUsername:               options.User,
 		ConnectPassword:               []byte(options.Password),
