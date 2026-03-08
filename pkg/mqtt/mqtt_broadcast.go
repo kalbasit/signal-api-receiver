@@ -192,9 +192,11 @@ func (m *handlerOpt) Handle(ctx context.Context, messagePayload receiver.Notifie
 	defer m.connStateMu.Unlock()
 
 	if m.connState == connStateUnknown || m.connState != desiredConnState {
-		err = m.publishConnectionState(ctx, messagePayload)
-		if err == nil {
+		sErr := m.publishConnectionState(ctx, messagePayload)
+		if sErr == nil {
 			m.connState = desiredConnState
+		} else {
+			err = errors.Join(sErr, err)
 		}
 	}
 
