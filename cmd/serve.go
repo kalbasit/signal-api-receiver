@@ -145,13 +145,13 @@ func serveCommand() *cli.Command {
 				Sources:  cli.EnvVars("MQTT_TOPIC_PREFIX"),
 				Value:    "signal-api-receiver",
 			},
-			&cli.IntFlag{
+			&cli.Uint8Flag{
 				Name:     "mqtt-qos",
 				Category: MqttCat,
 				Usage:    "Quality of Service (QoS) value",
 				Sources:  cli.EnvVars("MQTT_QOS"),
 				Value:    1,
-				Validator: func(q int) error {
+				Validator: func(q uint8) error {
 					if !slices.Contains(mqttconfig.QosValues(), q) {
 						return fmt.Errorf(
 							"%w: %d, allowed values are %v",
@@ -255,7 +255,7 @@ func serveAction() cli.ActionFunc {
 					User:               cmd.String("mqtt-user"),
 					Password:           cmd.String("mqtt-password"),
 					TopicPrefix:        cmd.String("mqtt-topic-prefix"),
-					Qos:                cmd.Int("mqtt-qos"),
+					Qos:                cmd.Uint8("mqtt-qos"),
 					RetainMessages:     cmd.Bool("mqtt-retain"),
 					InsecureSkipVerify: cmd.Bool("mqtt-insecure-skip-verify"),
 				},

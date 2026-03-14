@@ -28,8 +28,8 @@ const (
 	payloadContentType                    string = "application/json"
 )
 
-func QosValues() []int {
-	return []int{0, 1, 2}
+func QosValues() []uint8 {
+	return []uint8{0, 1, 2}
 }
 
 type InitOptions struct {
@@ -38,7 +38,7 @@ type InitOptions struct {
 	User               string
 	Password           string
 	TopicPrefix        string
-	Qos                int
+	Qos                uint8
 	RetainMessages     bool
 	InsecureSkipVerify bool
 }
@@ -104,10 +104,6 @@ type Config struct {
 	WillProperties                *paho.WillProperties
 }
 
-func (c Config) QosValue() byte {
-	return byte(c.Qos)
-}
-
 func (c Config) GetStatusPayloadForState(state bool) []byte {
 	payload := c.StatusOnlinePayload
 
@@ -119,7 +115,7 @@ func (c Config) GetStatusPayloadForState(state bool) []byte {
 }
 
 //nolint:unparam
-func cleanStartOnInitialConnection(qos int) bool {
+func cleanStartOnInitialConnection(qos uint8) bool {
 	if qos != 0 {
 		return false
 	}

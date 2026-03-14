@@ -223,7 +223,7 @@ func (m *handlerOpt) publishMessage(ctx context.Context, mPayload receiver.Notif
 	}
 
 	return publish(ctx, m.Manager, &paho.Publish{
-		QoS:        m.Config.QosValue(),
+		QoS:        m.Config.Qos,
 		Topic:      m.Config.Topics.Message,
 		Retain:     m.Config.RetainMessages,
 		Properties: m.Config.PublishProperties,
