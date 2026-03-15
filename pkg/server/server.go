@@ -100,9 +100,9 @@ func (s *Server) receivePop(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	if msg == nil {
-		w.WriteHeader(http.StatusNoContent)
-
-		return
+		// To comply with the `application/json` Content-Type in header we need to avoid an empty body.
+		// Therefor an empty object is used as msg instead
+		msg = &receiver.Message{}
 	}
 
 	w.Header().Set(contentType, contentTypeJSON)
