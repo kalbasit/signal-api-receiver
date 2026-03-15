@@ -98,7 +98,15 @@ func TestServeHTTP(t *testing.T) {
 			resp, err := http.Get(hs.URL + "/receive/pop")
 			require.NoError(t, err)
 
-			assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			var got receiver.Message
+			require.NoError(t, json.Unmarshal(body, &got))
+
+			assert.Equal(t, receiver.Message{}, got)
 		})
 
 		t.Run("one message in the queue", func(t *testing.T) {
