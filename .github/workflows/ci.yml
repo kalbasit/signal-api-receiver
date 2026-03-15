@@ -48,7 +48,20 @@ jobs:
         run: |
           go mod tidy
 
-          if nix build --print-build-logs .#signal-api-receiver.goModules --rebuild 2> /tmp/log; then
+          set +e
+          nix build --print-build-logs .#signal-api-receiver.goModules 2> /tmp/log
+          ret=$?
+          set -e
+
+          if [[ "$ret" -eq 0 ]]; then
+            set +e
+            nix build --print-build-logs .#signal-api-receiver.goModules --rebuild 2> /tmp/log
+            ret=$?
+            set -e
+          fi
+
+          if [[ "$ret" -eq 0 ]]; then
+            echo "::notice::Hash is up to date"
             exit 0
           fi
 
