@@ -1,7 +1,7 @@
 name: CI
 
 # Thin caller of kalbasit/gh-actions' reusable CI workflow.
-# Pinned to the feat branch until v0.1.0 is tagged — bump to @v0.1.0 once ready.
+# Pinned to @main while iterating; will repin to @v0.1.0 once tagged.
 
 on:
   pull_request:
@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   ci:
-    uses: kalbasit/gh-actions/.github/workflows/ci.yml@feat-add-reusable-ci-workflows
+    uses: kalbasit/gh-actions/.github/workflows/ci.yml@main
     with:
       cachix_cache: signal-api-receiver
       oci: true
