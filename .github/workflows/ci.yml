@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   ci:
-    uses: kalbasit/gh-actions/.github/workflows/ci.yml@feat-add-reusable-ci-workflows
+    uses: kalbasit/gh-actions/.github/workflows/ci.yml@main
     with:
       cachix_cache: signal-api-receiver
       oci: true
