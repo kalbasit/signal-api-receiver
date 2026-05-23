@@ -19,7 +19,7 @@ permissions:
   packages: write
 jobs:
   ci:
-    uses: kalbasit/gh-actions/.github/workflows/ci.yml@user/wnasreddine/ci-jobs
+    uses: kalbasit/gh-actions/.github/workflows/ci.yml@main
     with:
       cachix_cache: signal-api-receiver
       oci: true
