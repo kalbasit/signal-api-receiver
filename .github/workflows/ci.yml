@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   ci:
-    uses: kalbasit/gh-actions/.github/workflows/ci.yml@main
+    uses: kalbasit/gh-actions/.github/workflows/ci.yml@feat-generate-configurable-targets
     with:
       cachix_cache: signal-api-receiver
       oci: true
@@ -32,7 +32,7 @@ jobs:
       dockerhub_image: kalbasit/signal-api-receiver
       dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
       languages: |
-        {"go":{"packages":["signal-api-receiver"]}}
+        {"go":{"targets":[{"attr":"signal-api-receiver","file":"nix/packages/signal-api-receiver/default.nix"}]}}
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       gha_pat_token: ${{ secrets.GHA_PAT_TOKEN }}
