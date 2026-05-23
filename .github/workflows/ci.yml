@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   ci:
-    uses: kalbasit/gh-actions/.github/workflows/ci.yml@feat-generate-configurable-targets
+    uses: kalbasit/gh-actions/.github/workflows/ci.yml@user/wnasreddine/ci-jobs
     with:
       cachix_cache: signal-api-receiver
       oci: true
