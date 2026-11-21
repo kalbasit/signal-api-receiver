@@ -23,7 +23,7 @@ jobs:
             time: 45m
     steps:
       - uses: actions/checkout@v6
-      - uses: cachix/install-nix-action@v31
+      - uses: cachix/install-nix-action@v32
       - uses: cachix/cachix-action@v17
         with:
           name: signal-api-receiver
